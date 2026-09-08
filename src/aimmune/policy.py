@@ -12,6 +12,15 @@ from aimmune.schema import SchemaValidationError, validate_tool_args
 from aimmune.sensors.eve_to_bundle import ip_is_whitelisted
 from aimmune.store import append_jsonl, read_jsonl
 
+from aimmune.triage.decide import (
+    COMPANION_TOOLS,
+    HYPERMESH_TOOLS,
+    IP_ARG_TOOLS,
+    KNOWN_TOOLS,
+    SEVERITY_RANK,
+    bundle_bound_values,
+)
+
 POLICY_ENGINE = "brewnix-policy/v0"
 NOTIFY_CHANNEL = "fyber.auditor"
 HOT_PATH_TOOLS = frozenset({"firewall.block_ip", "firewall.unblock_ip"})
@@ -133,13 +142,42 @@ def decide(
     receipt_id: str,
     site_id: str,
     incident_id: str | None = None,
+    allow_model_execute: bool = False,
+    confidence_theta: float = 0.6,
+    model_tool_allowlist: frozenset[str] | set[str] | None = None,
+    bundle: dict[str, Any] | None = None,
 ) -> PolicyResult:
     actor = envelope.get("actor") or {}
+    is_model = actor.get("kind") == "model"
     is_expiry = actor.get("id") == "brewnix-rules/expiry"
     proposals = [dict(p) for p in (envelope.get("proposals") or [])]
     rule_ids = _rule_ids_from_envelope(envelope)
     ip = _primary_ip(envelope)
     severity = (envelope.get("judgment") or {}).get("severity", "info")
+
+    if is_model and bundle is not None:
+        allowed_subjects = bundle_bound_values(bundle, site_id=site_id)
+        bind_fail = False
+        kept: list[dict[str, Any]] = []
+        for proposal in proposals:
+            args = proposal.get("args") or {}
+            arg_ip = args.get("ip")
+            if proposal.get("tool") in IP_ARG_TOOLS and arg_ip and str(arg_ip) not in allowed_subjects:
+                bind_fail = True
+                continue
+            kept.append(proposal)
+        proposals = kept
+        for sub in (envelope.get("judgment") or {}).get("subjects") or []:
+            if sub.get("kind") == "ip" and str(sub.get("value") or "") not in allowed_subjects:
+                bind_fail = True
+        if bind_fail and not any(p.get("tool") in COMPANION_TOOLS for p in proposals):
+            return PolicyResult(
+                decision="observe",
+                rule_ids=rule_ids or ["subject_bind"],
+                proposals=proposals,
+                human_required=False,
+                reason="subject_bind",
+            )
 
     for proposal in proposals:
         try:
@@ -153,7 +191,10 @@ def decide(
                 reason="invalid_tool_or_args",
             )
         tool = proposal.get("tool")
-        if tool not in HOT_PATH_TOOLS | {"notify.operator"}:
+        allowed_here = HOT_PATH_TOOLS | {"notify.operator"}
+        if is_model:
+            allowed_here = KNOWN_TOOLS
+        if tool not in allowed_here:
             return PolicyResult(
                 decision="observe",
                 rule_ids=rule_ids or ["unknown_tool"],
@@ -171,6 +212,26 @@ def decide(
                     human_required=False,
                     reason="bad_notify_channel",
                 )
+
+    if is_model:
+        return _decide_model(
+            envelope,
+            proposals=proposals,
+            rule_ids=rule_ids,
+            ip=ip,
+            severity=str(severity),
+            whitelist=whitelist,
+            prior_blocks=prior_blocks,
+            alias_members=alias_members,
+            rate_limiter=rate_limiter,
+            now=now,
+            receipt_id=receipt_id,
+            site_id=site_id,
+            incident_id=incident_id,
+            allow_model_execute=allow_model_execute,
+            confidence_theta=confidence_theta,
+            model_tool_allowlist=frozenset(model_tool_allowlist or ()),
+        )
 
     if is_expiry:
         return _decide_expiry(
@@ -313,4 +374,134 @@ def _decide_expiry(
         human_required=False,
         reason="ttl_expired",
         execute_tools=["firewall.unblock_ip"],
+    )
+
+
+def _force_companion_propose(proposals: list[dict[str, Any]]) -> None:
+    for proposal in proposals:
+        if proposal.get("tool") in COMPANION_TOOLS | HYPERMESH_TOOLS:
+            proposal["mode"] = "propose"
+
+
+def _decide_model(
+    envelope: dict[str, Any],
+    *,
+    proposals: list[dict[str, Any]],
+    rule_ids: list[str],
+    ip: str | None,
+    severity: str,
+    whitelist: list[Any],
+    prior_blocks: list[dict[str, Any]],
+    alias_members: set[str],
+    rate_limiter: RateLimiter,
+    now: datetime,
+    receipt_id: str,
+    site_id: str,
+    incident_id: str | None,
+    allow_model_execute: bool,
+    confidence_theta: float,
+    model_tool_allowlist: frozenset[str],
+) -> PolicyResult:
+    """Model-originated path. Critical from the model ≠ auto-rule critical."""
+    ids = rule_ids or ["model"]
+    confidence = float(envelope.get("confidence") or 0)
+
+    if ip and ip_is_whitelisted(ip, whitelist):
+        _force_companion_propose(proposals)
+        return PolicyResult(
+            decision="observe",
+            rule_ids=ids or ["whitelist"],
+            proposals=proposals,
+            human_required=False,
+            reason="whitelist",
+        )
+
+    ttl_left = remaining_ttl_s(ip, prior_blocks) if ip else None
+    if ip and ip in alias_members and (ttl_left is None or ttl_left >= 0):
+        _force_companion_propose(proposals)
+        return PolicyResult(
+            decision="observe",
+            rule_ids=ids or ["dedupe"],
+            proposals=proposals,
+            human_required=False,
+            reason="already_blocked",
+        )
+
+    companions = [p for p in proposals if p.get("tool") in COMPANION_TOOLS]
+    notify_existing = next((p for p in proposals if p.get("tool") == "notify.operator"), None)
+
+    can_execute = bool(allow_model_execute) and confidence >= confidence_theta
+    execute_tools: list[str] = []
+    if can_execute:
+        for proposal in proposals:
+            tool = proposal.get("tool")
+            if tool not in COMPANION_TOOLS:
+                continue
+            if tool not in model_tool_allowlist:
+                proposal["mode"] = "propose"
+                continue
+            proposal["mode"] = "execute"
+            execute_tools.append(str(tool))
+    else:
+        _force_companion_propose(proposals)
+
+    if execute_tools:
+        if "firewall.block_ip" in execute_tools and rate_limiter.would_exceed(now):
+            _force_companion_propose(proposals)
+            notify = _ensure_notify(
+                proposals,
+                reason_code="rate_limit_hold",
+                severity=severity,
+                site_id=site_id,
+                ip=ip,
+                rule_id=ids[0] if ids else "rate_limit_hold",
+                receipt_id=receipt_id,
+                incident_id=incident_id,
+            )
+            return PolicyResult(
+                decision="hold_human",
+                rule_ids=ids,
+                proposals=proposals,
+                human_required=True,
+                reason="rate_limit_hold",
+                notify=notify,
+            )
+        return PolicyResult(
+            decision="execute",
+            rule_ids=ids,
+            proposals=proposals,
+            human_required=False,
+            reason="model_elevated",
+            execute_tools=execute_tools,
+        )
+
+    if companions or SEVERITY_RANK.get(severity, 0) >= SEVERITY_RANK["high"]:
+        reason = "model_propose"
+        if allow_model_execute and confidence < confidence_theta:
+            reason = "below_theta"
+        notify = notify_existing or _ensure_notify(
+            proposals,
+            reason_code="propose_needs_ack",
+            severity=severity if SEVERITY_RANK.get(severity, 0) >= SEVERITY_RANK["high"] else "high",
+            site_id=site_id,
+            ip=ip,
+            rule_id=ids[0] if ids else "model",
+            receipt_id=receipt_id,
+            incident_id=incident_id,
+        )
+        return PolicyResult(
+            decision="propose",
+            rule_ids=ids,
+            proposals=proposals,
+            human_required=True,
+            reason=reason,
+            notify=notify,
+        )
+
+    return PolicyResult(
+        decision="observe",
+        rule_ids=ids or ["observe"],
+        proposals=proposals,
+        human_required=False,
+        reason="model_observe",
     )

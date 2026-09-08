@@ -6,10 +6,14 @@ from pathlib import Path
 
 import pytest
 
+from dataclasses import replace
+
 from aimmune.clock import FrozenClock
 from aimmune.config import Config, find_iface_pin
 from aimmune.cycle import Runtime, build_runtime
 from aimmune.exec.opnsense_alias import MockAliasStore
+from aimmune.triage.engines.mock import MockEngine
+from aimmune.triage.settings import EngineSpec, RailsStub, TriageSettings
 
 SCAN_SID = "2100498"
 BRUTE_SID = "5721"
@@ -72,3 +76,40 @@ def tmp_state(tmp_path: Path, clock: FrozenClock, pin: Path) -> Runtime:
     )
     rt = build_runtime(cfg, clock=clock, alias=MockAliasStore())
     return rt
+
+
+def enable_triage(
+    rt: Runtime,
+    *,
+    mode: str = "rules_primary",
+    scenario: str = "propose",
+    rails: RailsStub | None = None,
+    enrich: bool = False,
+    theta: float = 0.6,
+    engine_order: tuple[str, ...] = ("mock",),
+) -> MockEngine:
+    """Attach engines and matching triage settings (tests / cottage stub)."""
+    from aimmune.triage.engines.pair import PairEngine
+
+    mock = MockEngine(engine_id="mock-engine", scenario=scenario)
+    specs: list[EngineSpec] = []
+    engines: list = []
+    for kind in engine_order:
+        if kind == "pair":
+            specs.append(EngineSpec(kind="pair", id="pair-local"))
+            engines.append(PairEngine(engine_id="pair-local"))
+        elif kind == "mock":
+            specs.append(EngineSpec(kind="mock", id="mock-engine", scenario=scenario))
+            engines.append(mock)
+    rt.config = replace(
+        rt.config,
+        triage=TriageSettings(
+            mode=mode,
+            enrich=enrich,
+            confidence_theta=theta,
+            engines=tuple(specs),
+            rails=rails or RailsStub(),
+        ),
+    )
+    rt.triage_engines = engines
+    return mock

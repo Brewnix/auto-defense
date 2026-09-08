@@ -70,7 +70,7 @@ Optional `--note` is a short redacted `receipt.annotate` (max 500).
 | Route | Content |
 |-------|---------|
 | `/` | site_id, plane_reachable, sell_state (last receipt / env; **stale unknown OK**) |
-| `/receipts` | last N receipts — id, purpose, policy.decision, tools, effects, human, parent_id |
+| `/receipts` | last N receipts — id, **actor kind/id**, purpose, policy.decision, tools, effects, human, parent_id |
 | `/holds` | notify_queue + auditor_watch with status copy; local approve/deny when allowed |
 | `/incidents` | `incidents.jsonl` overlay (slice 3 enrich: kind / status / subjects / links / counts + human close) |
 | `/preempt` | pending `preempt_queue.jsonl` + recent `hypermesh.*` receipts |

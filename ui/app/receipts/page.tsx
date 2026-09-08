@@ -51,6 +51,7 @@ export default async function ReceiptsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>receipt_id</TableHead>
+              <TableHead>actor</TableHead>
               <TableHead>purpose</TableHead>
               <TableHead>decision</TableHead>
               <TableHead>tools</TableHead>
@@ -64,6 +65,14 @@ export default async function ReceiptsPage() {
             {snap.receipts.map((row) => (
               <TableRow key={row.receipt_id}>
                 <TableCell className="font-mono text-xs">{row.receipt_id}</TableCell>
+                <TableCell className="font-mono text-xs">
+                  {row.actor?.kind || "—"}
+                  {row.actor?.id ? (
+                    <span className="block truncate text-muted-foreground">
+                      {row.actor.id}
+                    </span>
+                  ) : null}
+                </TableCell>
                 <TableCell>{row.purpose}</TableCell>
                 <TableCell>{row.policy?.decision}</TableCell>
                 <TableCell>{(row.tools || []).join(", ") || "—"}</TableCell>

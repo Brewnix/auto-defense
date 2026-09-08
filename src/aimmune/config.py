@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+
+from aimmune.triage.settings import RailsStub, TriageSettings, parse_triage_settings
 
 DEFAULT_STATE_DIR = Path("/var/lib/aimmune")
 DEFAULT_CYCLE_SECONDS = 120
@@ -128,6 +130,7 @@ class Config:
     ui_token: str | None = None
     ui_host: str = DEFAULT_UI_HOST
     ui_port: int = DEFAULT_UI_PORT
+    triage: TriageSettings = field(default_factory=TriageSettings)
 
     @property
     def lease_bindings(self) -> tuple[tuple[str, str], ...]:
@@ -190,6 +193,14 @@ class Config:
     @property
     def auditor_watch_path(self) -> Path:
         return self.state_dir / "auditor_watch.jsonl"
+
+    @property
+    def triage_eval_path(self) -> Path:
+        return self.state_dir / "triage_eval.jsonl"
+
+    @property
+    def rails_stub(self) -> RailsStub:
+        return self.triage.rails
 
 
 def load_config(
@@ -274,4 +285,10 @@ def load_config(
         ui_host=(os.environ.get("AIMMUNE_UI_HOST") or DEFAULT_UI_HOST).strip()
         or DEFAULT_UI_HOST,
         ui_port=int(os.environ.get("AIMMUNE_UI_PORT", str(DEFAULT_UI_PORT))),
+        triage=parse_triage_settings(
+            rails_profile=(
+                os.environ.get("AIMMUNE_RAILS_PROFILE", DEFAULT_RAILS_PROFILE).strip()
+                or DEFAULT_RAILS_PROFILE
+            )
+        ),
     )

@@ -28,6 +28,7 @@ export type ReceiptRow = {
     error?: string | null;
   }>;
   input?: { features_digest?: string; window_s?: number; sources?: string[] };
+  actor?: { kind?: string; id?: string; purpose?: string };
   display?: StatusView;
 };
 
