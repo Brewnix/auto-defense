@@ -137,6 +137,7 @@ def decide_preempt(
     human_approved: bool = False,
     owner_ack: bool = False,
     incident_id: str | None = None,
+    incident_open: bool = False,
     lease_stop_rate: RateLimiter | None = None,
     now: datetime | None = None,
     device_id: str | None = None,
@@ -247,8 +248,8 @@ def decide_preempt(
             )
         elif tool == "hypermesh.lease_stop":
             # strict: propose + notify only unless human / owner ack.
-            # Elevated auto is slice 7 (grants). Open incident would still
-            # not unlock auto execute here.
+            # Elevated auto is slice 7 (grants). Execute still requires an
+            # open incident_id — missing → force propose/hold+notify.
             eligible = False
             if lease_stop_rate is not None and now is not None and lease_stop_rate.would_exceed(now):
                 hold = True
@@ -271,6 +272,15 @@ def decide_preempt(
         if item.hold:
             item.proposal["mode"] = "propose"
             item.execute_eligible = False
+            continue
+        if (
+            item.proposal.get("tool") == "hypermesh.lease_stop"
+            and item.execute_eligible
+            and not (incident_id and incident_open)
+        ):
+            item.execute_eligible = False
+            item.reject_reason = None
+            item.proposal["mode"] = "propose"
             continue
         item.proposal["mode"] = "execute" if item.execute_eligible else "propose"
 
@@ -324,11 +334,6 @@ def decide_preempt(
                 ),
             )
             kept.append(notify)
-
-    # lease_stop execute still needs an open incident only for elevated auto
-    # (deferred). Human / owner ack may execute without it. Missing incident
-    # never upgrades a strict propose into execute.
-    _ = incident_id
 
     return PreemptDecision(
         decision=decision,

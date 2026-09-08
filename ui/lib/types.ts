@@ -47,13 +47,38 @@ export type HoldRow = StatusView & {
   } | null;
 };
 
+export type IncidentSubject = {
+  kind?: string;
+  value?: string;
+  node?: string;
+  unit?: string;
+};
+
 export type IncidentRow = {
+  schema?: string;
   incident_id?: string;
+  site_id?: string;
+  kind?: string;
   status?: string;
+  opened_at?: string;
+  opened_by?: { kind?: string; id?: string };
   severity?: string;
   summary_redacted?: string;
-  opened_at?: string;
-  primary_subjects?: Array<{ kind?: string; value?: string }>;
+  primary_subjects?: IncidentSubject[];
+  closed_at?: string | null;
+  close_reason?: string | null;
+  flags?: { contain_applied?: boolean; grant_active?: boolean };
+  links?: { opening_trace_id?: string; opening_receipt_id?: string | null };
+  index?: {
+    receipt_ids?: string[];
+    ticket_ids?: string[];
+    grant_ids?: string[];
+    receipt_count?: number;
+    ticket_count?: number;
+    grant_count?: number;
+  };
+  can_close?: boolean;
+  grant_active?: boolean;
 };
 
 export type PreemptQueueRow = {

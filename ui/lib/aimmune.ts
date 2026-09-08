@@ -50,6 +50,12 @@ export async function loadSnapshot(limit = 50): Promise<Snapshot> {
   return JSON.parse(result.stdout) as Snapshot;
 }
 
+export async function closeIncident(
+  incidentId: string,
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  return runAimmune(["incident", "close", "--id", incidentId]);
+}
+
 export async function ownerResolve(
   receiptId: string,
   action: "approve" | "deny",

@@ -135,6 +135,11 @@ def build_snapshot(rt: Any, *, limit: int = 50) -> dict[str, Any]:
     queue_rows = _queue_rows(rt)
     watches = rt.watches.rows()
     incidents = read_jsonl(rt.config.incidents_path)
+    index_rows = {
+        str(row.get("incident_id")): row
+        for row in read_jsonl(rt.config.incident_index_path)
+        if row.get("incident_id")
+    }
     preempt_rows = read_jsonl(rt.config.preempt_queue_path)
     plane = bool(rt.config.plane_reachable)
     recent = receipts[-limit:] if limit else receipts
@@ -149,7 +154,10 @@ def build_snapshot(rt: Any, *, limit: int = 50) -> dict[str, Any]:
             for row in reversed(recent)
         ],
         "holds": _hold_index(receipts, queue_rows, watches, plane_reachable=plane),
-        "incidents": [serialize_incident(row) for row in reversed(incidents[-limit:])],
+        "incidents": [
+            serialize_incident(row, index_rows.get(str(row.get("incident_id"))))
+            for row in reversed(incidents[-limit:])
+        ],
         "preempt": {
             "queue": [serialize_preempt_queue_row(row) for row in preempt_rows if not row.get("done")],
             "receipts": [

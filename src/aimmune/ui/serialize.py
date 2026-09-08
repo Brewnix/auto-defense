@@ -169,18 +169,44 @@ def serialize_receipt(receipt: dict[str, Any], *, display: dict[str, Any] | None
     return strip_unsafe(out)
 
 
-def serialize_incident(row: dict[str, Any]) -> dict[str, Any]:
+def serialize_incident(
+    row: dict[str, Any],
+    index: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Full fyber.incident/v0 fields plus side-index counts. No prompts/EVE."""
+    idx = index or {}
+    receipt_ids = list(idx.get("receipt_ids") or [])
+    ticket_ids = list(idx.get("ticket_ids") or [])
+    grant_ids = list(idx.get("grant_ids") or [])
+    flags = dict(row.get("flags") or {})
+    grant_active = bool(flags.get("grant_active"))
+    status = row.get("status")
     return strip_unsafe(
         {
+            "schema": row.get("schema") or "fyber.incident/v0",
             "incident_id": row.get("incident_id"),
             "site_id": row.get("site_id"),
             "kind": row.get("kind"),
-            "status": row.get("status"),
+            "status": status,
+            "opened_at": row.get("opened_at"),
+            "opened_by": row.get("opened_by") or {},
             "severity": row.get("severity"),
             "summary_redacted": row.get("summary_redacted"),
-            "opened_at": row.get("opened_at"),
             "primary_subjects": row.get("primary_subjects") or [],
-            "flags": row.get("flags") or {},
+            "closed_at": row.get("closed_at"),
+            "close_reason": row.get("close_reason"),
+            "flags": flags,
+            "links": row.get("links") or {},
+            "index": {
+                "receipt_ids": receipt_ids,
+                "ticket_ids": ticket_ids,
+                "grant_ids": grant_ids,
+                "receipt_count": len(receipt_ids),
+                "ticket_count": len(ticket_ids),
+                "grant_count": len(grant_ids),
+            },
+            "can_close": status == "open",
+            "grant_active": grant_active,
         }
     )
 
