@@ -1,0 +1,24 @@
+# brewnix-rules/v0.1 — placeholder SID sets + iface thresholds.
+# Tune SIDs with acceptance tests; do not invent lists in inference-iface docs.
+version: v0.1
+actor:
+  kind: rule
+  id: brewnix-rules/v0.1
+  purpose: triage
+confidence: 1.0
+thresholds:
+  N: 10   # distinct dest ports → port_scan_burst
+  M: 20   # alerts on scan SIDs → port_scan_burst
+  K: 15   # auth-fail SID events → ssh_brute
+ttl_s: 86400
+auto_execute_rule_ids:
+  - port_scan_burst
+sids:
+  port_scan:
+    - "2100498"   # placeholder: ET SCAN-class
+    - "2402000"   # placeholder: scan burst
+  ssh_brute:
+    - "5721"      # placeholder: SSH brute-force
+    - "2014240"   # placeholder: SSH auth-fail
+  noise_ignore:
+    - "2403300"   # placeholder: known-benign SID
