@@ -93,6 +93,8 @@ OPNsense one-time: Host(s) alias `ai_autoblock`, WAN block-source rule (created 
 
 Expiry (`brewnix-rules/expiry`): rate limits do not apply; whitelist does not stick the ledger; already-gone alias member → `observe` + advance ledger. Inherits parent incident only.
 
+Each `cycle` runs **detect then expiry**. A still-hot EVE window dedupes against the live alias before this tick removes an expired member. New alerts after `expire_at` may re-block on a later cycle (no sliding TTL).
+
 ## Out of scope (slice 2+)
 
 Plane fyber.auditor client · health-watch · `actor.kind: model` · Hypermesh preempt · full incident join/close clocks · AImmune UI · Tailscale.

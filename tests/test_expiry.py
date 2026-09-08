@@ -17,7 +17,7 @@ def test_ttl_expiry_unblocks_once_and_chain_unbroken(tmp_state) -> None:
     assert ATTACKER in tmp_state.alias.list_members()
 
     tmp_state.clock.advance(60)
-    # Keep the same burst so detect still sees the IP (deduped) while expiry fires.
+    write_eve(tmp_state.config.eve_path, [])
     expired = run_cycle(tmp_state)
     unblocks = [
         rec
@@ -54,6 +54,7 @@ def test_expiry_dedupe_when_already_gone(tmp_state) -> None:
     run_cycle(tmp_state)
     tmp_state.alias.delete(ATTACKER)
     tmp_state.clock.advance(60)
+    write_eve(tmp_state.config.eve_path, [])
     result = run_cycle(tmp_state)
     expiry = [r for r in result.receipts if r["actor"]["id"] == "brewnix-rules/expiry"]
     assert len(expiry) == 1

@@ -409,11 +409,6 @@ def run_cycle(rt: Runtime) -> CycleResult:
     envelopes: list[dict[str, Any]] = []
     receipts: list[dict[str, Any]] = []
 
-    for row in rt.ledger.due(rt.clock.now()):
-        env, rec = _run_expiry_row(rt, row)
-        envelopes.append(env)
-        receipts.append(rec)
-
     now = rt.clock.now()
     members = rt.alias.list_members(rt.config.alias)
     prior = rt.ledger.prior_blocks(now, members)
@@ -451,6 +446,14 @@ def run_cycle(rt: Runtime) -> CycleResult:
         ]
     for env in detect_envs:
         rec = _run_detect_envelope(rt, env, bundle_with_digest)
+        envelopes.append(env)
+        receipts.append(rec)
+
+    # Expiry after detect so a still-hot window dedupes against the live alias
+    # before this tick removes the member. New alerts after expire_at re-block
+    # on a later cycle (no sliding TTL).
+    for row in rt.ledger.due(rt.clock.now()):
+        env, rec = _run_expiry_row(rt, row)
         envelopes.append(env)
         receipts.append(rec)
 
