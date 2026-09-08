@@ -203,6 +203,10 @@ class Config:
         return self.state_dir / "grants.jsonl"
 
     @property
+    def last_cycle_path(self) -> Path:
+        return self.state_dir / "last_cycle.json"
+
+    @property
     def rails_stub(self) -> RailsStub:
         return self.triage.rails
 

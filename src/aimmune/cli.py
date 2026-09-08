@@ -1,4 +1,4 @@
-"""CLI: cycle, loop, drain, poll-tickets, preempt, incident, grant, owner, ui-snapshot.
+"""CLI: cycle, loop, status, drain, poll-tickets, preempt, incident, grant, owner, ui-snapshot.
 
 Plane resolve / grant resolve stay plane-only. Site-local owner
 approve/deny is slice 5. Incident close/sweep is slice 3 (overlay;
@@ -30,6 +30,7 @@ from aimmune.notify.drain import drain_queue, poll_tickets
 from aimmune.owner.local import WaitingOnPlaneError, local_resolve
 from aimmune.preempt.runner import cli_preempt, run_preempt_queue
 from aimmune.receipt.chain import verify_chain
+from aimmune.status import build_status, format_status_text
 from aimmune.ui.snapshot import build_snapshot
 
 
@@ -73,6 +74,22 @@ def cmd_loop(args: argparse.Namespace) -> int:
     while True:
         run_cycle(rt)
         time.sleep(seconds)
+
+
+def cmd_status(args: argparse.Namespace) -> int:
+    """Read-only summary. Always exits 0 (informational)."""
+    cfg = load_config(
+        state_dir=args.state_dir,
+        site_id=args.site_id,
+        eve_path=args.eve,
+        whitelist_path=args.whitelist,
+    )
+    payload = build_status(cfg)
+    if args.json:
+        print(canonical_dumps(payload))
+    else:
+        print(format_status_text(payload), end="")
+    return 0
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
@@ -449,6 +466,18 @@ def main(argv: list[str] | None = None) -> int:
     _add_shared(loop)
     loop.add_argument("--seconds", type=int, default=None)
     loop.set_defaults(func=cmd_loop)
+
+    status = sub.add_parser(
+        "status",
+        help="read-only site summary (journald companion; always exits 0)",
+    )
+    _add_shared(status)
+    status.add_argument(
+        "--json",
+        action="store_true",
+        help="print canonical JSON instead of the text dump",
+    )
+    status.set_defaults(func=cmd_status)
 
     verify = sub.add_parser("verify-chain", help="verify receipt hash chain")
     _add_shared(verify)

@@ -57,4 +57,4 @@ Client notes: [`docs/plane-client.md`](plane-client.md).
 
 ## Vertical
 
-`0 → 1 → 2 → 4 → 5` then package. **Slice 0 done.** Slice 3 parallel after 1. Slices 6–8 after the vertical works. Full table: [`docs/roadmap.md`](roadmap.md).
+`0 → 1 → 2 → 4 → 5` then package. **Slice 0 done.** Slice 3 parallel after 1. Slices 6–8 after the vertical works. Slice 9 packages the daemon ([`docs/slice-9-package.md`](slice-9-package.md)). Full table: [`docs/roadmap.md`](roadmap.md).

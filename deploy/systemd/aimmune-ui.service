@@ -1,0 +1,38 @@
+[Unit]
+Description=AImmune site UI (optional; loopback Next.js)
+Documentation=https://github.com/Brewnix/auto-defense/blob/main/docs/slice-9-package.md
+After=network-online.target aimmune.service
+Wants=aimmune.service
+# Skip if the sibling UI tree was not installed (do not embed Next in Python).
+ConditionPathExists=/usr/local/lib/aimmune/ui/package.json
+
+[Service]
+Type=simple
+User=aimmune
+Group=aimmune
+UMask=0077
+EnvironmentFile=-/etc/aimmune/aimmune.env
+Environment=PYTHONUNBUFFERED=1
+# Loopback default lives in aimmune.env.example and the ExecStart
+# ${AIMMUNE_UI_HOST:-127.0.0.1} fallback. Do not set Environment= for
+# that key — it would override the env file and block 0.0.0.0 opt-in.
+WorkingDirectory=/usr/local/lib/aimmune/ui
+# Fail closed: do not serve without a bearer token (slice 5 / 8 stay valid).
+ExecStartPre=/bin/sh -c 'test -n "${AIMMUNE_UI_TOKEN-}"'
+# Built once with `npm ci && npm run build`. Do not put the UI in the pip wheel.
+ExecStart=/bin/sh -c 'exec npm run start -- -H "${AIMMUNE_UI_HOST:-127.0.0.1}" -p "${AIMMUNE_UI_PORT:-3000}"'
+Restart=on-failure
+RestartSec=5
+Nice=15
+TimeoutStopSec=20
+MemoryMax=512M
+TasksMax=64
+LimitNOFILE=2048
+NoNewPrivileges=true
+PrivateTmp=true
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aimmune-ui
+
+[Install]
+WantedBy=multi-user.target
