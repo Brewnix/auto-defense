@@ -1,6 +1,7 @@
-"""CLI: cycle, loop, drain, poll-tickets, preempt, owner, ui-snapshot.
+"""CLI: cycle, loop, drain, poll-tickets, preempt, incident, owner, ui-snapshot.
 
 Plane resolve stays plane-only. Site-local owner approve/deny is slice 5.
+Incident close/sweep is slice 3 (overlay; never gates contain).
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from pathlib import Path
 from aimmune.canonical import canonical_dumps
 from aimmune.config import load_config
 from aimmune.cycle import build_runtime, run_cycle
+from aimmune.incident.minimal import GrantActiveError, IncidentError
 from aimmune.notify.drain import drain_queue, poll_tickets
 from aimmune.owner.local import WaitingOnPlaneError, local_resolve
 from aimmune.preempt.runner import cli_preempt, run_preempt_queue
@@ -51,6 +53,7 @@ def cmd_cycle(args: argparse.Namespace) -> int:
         "state_dir": str(rt.config.state_dir),
         "plane_reachable": rt.config.plane_reachable,
         "plane": result.plane,
+        "sweep": result.sweep,
     }
     print(canonical_dumps(summary))
     return 0
@@ -152,6 +155,69 @@ def cmd_owner(args: argparse.Namespace) -> int:
         )
     )
     return 0
+
+
+def cmd_incident(args: argparse.Namespace) -> int:
+    rt = _runtime_from_args(args)
+    cmd = args.incident_cmd
+    if cmd == "list":
+        rows = []
+        for rec in reversed(rt.incidents.list_incidents()):
+            idx = rt.incidents.index_get(str(rec.get("incident_id") or "")) or {}
+            rows.append(
+                {
+                    "incident_id": rec.get("incident_id"),
+                    "kind": rec.get("kind"),
+                    "status": rec.get("status"),
+                    "severity": rec.get("severity"),
+                    "opened_at": rec.get("opened_at"),
+                    "closed_at": rec.get("closed_at"),
+                    "close_reason": rec.get("close_reason"),
+                    "primary_subjects": rec.get("primary_subjects") or [],
+                    "receipt_count": len(idx.get("receipt_ids") or []),
+                    "ticket_count": len(idx.get("ticket_ids") or []),
+                    "grant_active": bool((rec.get("flags") or {}).get("grant_active")),
+                }
+            )
+        print(canonical_dumps({"incidents": rows, "count": len(rows)}))
+        return 0
+    if cmd == "close":
+        try:
+            rec = rt.incidents.close_human(args.id, now=rt.clock.now())
+        except GrantActiveError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        except IncidentError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
+        if rec is None:
+            print("ERROR: incident close write failed", file=sys.stderr)
+            return 1
+        print(canonical_dumps(rec))
+        return 0
+    if cmd == "sweep":
+        result = rt.incidents.sweep(rt.clock.now())
+        print(canonical_dumps(result))
+        return 0
+    if cmd == "open-ops":
+        rec = rt.incidents.open_or_join_ops(
+            site_id=rt.config.site_id,
+            opened_at=rt.clock.now(),
+            opened_by={"kind": "human", "id": "aimmune-cli/incident"},
+            severity=args.severity,
+            summary_redacted=args.summary,
+            opening_trace_id=args.trace_id or "cli-open-ops",
+            node=args.node,
+            unit=args.unit,
+            health_class=args.health_class,
+        )
+        if rec is None:
+            print("ERROR: ops incident write failed", file=sys.stderr)
+            return 1
+        print(canonical_dumps(rec))
+        return 0
+    print(f"ERROR: unknown incident command {cmd}", file=sys.stderr)
+    return 1
 
 
 def cmd_ui_snapshot(args: argparse.Namespace) -> int:
@@ -276,6 +342,41 @@ def main(argv: list[str] | None = None) -> int:
     )
     _add_shared(run_p)
     run_p.set_defaults(func=cmd_preempt, preempt_cmd="run")
+
+    incident = sub.add_parser(
+        "incident",
+        help="local fyber.incident/v0 overlay (list / close / sweep; never gates contain)",
+    )
+    incident_sub = incident.add_subparsers(dest="incident_cmd", required=True)
+
+    inc_list = incident_sub.add_parser("list", help="list local incidents + index counts")
+    _add_shared(inc_list)
+    inc_list.set_defaults(func=cmd_incident, incident_cmd="list")
+
+    inc_close = incident_sub.add_parser("close", help="human-close an incident (refused if grant_active)")
+    _add_shared(inc_close)
+    inc_close.add_argument("--id", required=True, help="incident UUID")
+    inc_close.set_defaults(func=cmd_incident, incident_cmd="close")
+
+    inc_sweep = incident_sub.add_parser(
+        "sweep",
+        help="auto_quiet close (security 24h / ops 2h, no new linked receipts)",
+    )
+    _add_shared(inc_sweep)
+    inc_sweep.set_defaults(func=cmd_incident, incident_cmd="sweep")
+
+    inc_ops = incident_sub.add_parser(
+        "open-ops",
+        help="open or join an ops incident (tests/dev; 1h join window)",
+    )
+    _add_shared(inc_ops)
+    inc_ops.add_argument("--severity", default="high")
+    inc_ops.add_argument("--summary", default="cli open-ops")
+    inc_ops.add_argument("--health-class", default=None)
+    inc_ops.add_argument("--node", default=None)
+    inc_ops.add_argument("--unit", default=None)
+    inc_ops.add_argument("--trace-id", default=None)
+    inc_ops.set_defaults(func=cmd_incident, incident_cmd="open-ops")
 
     owner = sub.add_parser(
         "owner",

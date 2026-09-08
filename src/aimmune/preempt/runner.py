@@ -25,6 +25,7 @@ from aimmune.schema import validate_envelope, validate_receipt
 
 EXECUTOR_NOTIFY = "auditor-api@site"
 ACTOR_CLI = {"kind": "human", "id": "aimmune-cli/preempt", "purpose": "triage"}
+HEALTH_REASONS = frozenset({"health_evacuate", "owner_stop_selling", "owner_primary"})
 
 
 def door_for(reason_code: str) -> str:
@@ -207,6 +208,56 @@ def _attempts_to_executions(rt, drain: DrainResult) -> list[dict[str, Any]]:
     return executions
 
 
+def _opened_by(actor: dict[str, Any]) -> dict[str, str]:
+    kind = str(actor.get("kind") or "automation")
+    if kind not in {"rule", "automation", "human"}:
+        kind = "automation"
+    return {"kind": kind, "id": str(actor.get("id") or "aimmune-preempt")}
+
+
+def bind_preempt_incident(
+    rt,
+    *,
+    reason_code: str,
+    proposals: list[dict[str, Any]],
+    actor: dict[str, Any],
+    judgment: dict[str, Any],
+    incident_id: str | None,
+    opening_trace_id: str,
+    opening_receipt_id: str | None,
+) -> str | None:
+    """Resolve an open incident for preempt. Never invent a security case for sell_pause.
+
+    Health sell_pause prefers/opens ``ops``. ``lease_stop`` execute uses an
+    existing open id only — missing stays None so policy force-proposes.
+    """
+    if incident_id and rt.incidents.is_open(incident_id):
+        return incident_id
+    tools = {p.get("tool") for p in proposals}
+    health = reason_code in HEALTH_REASONS
+    if "hypermesh.sell_pause" in tools and health:
+        rec = rt.incidents.open_or_join_ops(
+            site_id=rt.config.site_id,
+            opened_at=rt.clock.now(),
+            opened_by=_opened_by(actor),
+            severity=str(judgment.get("severity") or "high"),
+            summary_redacted=str(judgment.get("summary") or reason_code)[:1000],
+            opening_trace_id=opening_trace_id,
+            opening_receipt_id=opening_receipt_id,
+            health_class=reason_code,
+        )
+        if rec:
+            return str(rec["incident_id"])
+    preferred = "ops" if health else "security"
+    found = rt.incidents.find_open(rt.config.site_id, kind=preferred)
+    if found:
+        return str(found[0]["incident_id"])
+    any_open = rt.incidents.find_open(rt.config.site_id)
+    if any_open:
+        return str(any_open[0]["incident_id"])
+    return None
+
+
 def run_preempt(
     rt,
     *,
@@ -226,6 +277,17 @@ def run_preempt(
 ) -> dict[str, Any]:
     """Apply the matrix; H3 only for execute-eligible tools. Writes a receipt."""
     receipt_id = str(uuid4())
+    trace_id = str(uuid4())
+    incident_id = bind_preempt_incident(
+        rt,
+        reason_code=reason_code,
+        proposals=proposals,
+        actor=actor,
+        judgment=judgment,
+        incident_id=incident_id,
+        opening_trace_id=trace_id,
+        opening_receipt_id=receipt_id,
+    )
     policy = decide_preempt(
         proposals,
         pin=rt.config.iface_pin,
@@ -239,6 +301,7 @@ def run_preempt(
         human_approved=human_approved,
         owner_ack=owner_ack,
         incident_id=incident_id,
+        incident_open=rt.incidents.is_open(incident_id),
         lease_stop_rate=rt.lease_stop_rate,
         now=rt.clock.now(),
         device_id=device_id,
@@ -253,6 +316,7 @@ def run_preempt(
         proposals=policy.proposals,
         needs_human=policy.human_required,
     )
+    envelope["trace_id"] = trace_id
     validate_envelope(envelope, rt.config.iface_pin)
 
     executions: list[dict[str, Any]] = []
@@ -354,7 +418,7 @@ def run_preempt(
     validate_receipt(receipt, rt.config.iface_pin)
     rt.chain.append(receipt)
     if incident_id:
-        rt.incidents.attach_receipt(str(incident_id), receipt_id)
+        rt.incidents.attach_receipt(str(incident_id), receipt_id, now=rt.clock.now())
     if ticket_id and rt.auditor is not None and decision in {"execute", "observe", "hold_human", "propose"}:
         if any(e.get("tool") in HYPERMESH_TOOLS and e.get("status") in {"applied", "failed", "denied"} for e in executions) or decision != "execute":
             try:

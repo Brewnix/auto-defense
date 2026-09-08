@@ -365,7 +365,7 @@ def apply_resolution(
     validate_receipt(receipt, rt.config.iface_pin)
     rt.chain.append(receipt)
     if incident_id:
-        rt.incidents.attach_receipt(str(incident_id), child_id)
+        rt.incidents.attach_receipt(str(incident_id), child_id, now=rt.clock.now())
     return receipt
 
 

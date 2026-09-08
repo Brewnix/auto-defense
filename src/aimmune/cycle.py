@@ -45,6 +45,7 @@ class CycleResult:
     envelopes: list[dict[str, Any]] = field(default_factory=list)
     receipts: list[dict[str, Any]] = field(default_factory=list)
     plane: dict[str, Any] | None = None
+    sweep: dict[str, Any] | None = None
 
 
 @dataclass
@@ -391,7 +392,7 @@ def _run_detect_envelope(
     )
     _persist_receipt(rt, receipt)
     if incident_id:
-        rt.incidents.attach_receipt(incident_id, receipt_id)
+        rt.incidents.attach_receipt(incident_id, receipt_id, now=rt.clock.now())
         # Late-bind incident on ledger rows written with this receipt.
         rows = rt.ledger.rows()
         for row in rows:
@@ -485,9 +486,11 @@ def _run_expiry_row(rt: Runtime, row: dict[str, Any]) -> tuple[dict[str, Any], d
     )
     _persist_receipt(rt, receipt)
     if parent_incident:
-        rt.incidents.attach_receipt(str(parent_incident), receipt_id)
+        rt.incidents.attach_receipt(str(parent_incident), receipt_id, now=rt.clock.now())
     elif row.get("parent_receipt_id"):
-        rt.incidents.inherit_parent(str(row["parent_receipt_id"]), receipt_id)
+        rt.incidents.inherit_parent(
+            str(row["parent_receipt_id"]), receipt_id, now=rt.clock.now()
+        )
     return envelope, receipt
 
 
@@ -562,4 +565,18 @@ def run_cycle(rt: Runtime) -> CycleResult:
         except Exception:  # noqa: BLE001 — cycle must still return local receipts
             plane = {"drain": {"errors": ["sync_plane failed"]}, "poll": {}}
 
-    return CycleResult(bundle=bundle, envelopes=envelopes, receipts=receipts, plane=plane)
+    # Incident auto_quiet after detect/expiry (and plane sync). Sweep
+    # failure must never block contain — receipts are already written.
+    sweep: dict[str, Any] | None = None
+    try:
+        sweep = rt.incidents.sweep(rt.clock.now())
+    except Exception:  # noqa: BLE001 — overlay never gates the cycle
+        sweep = {"closed": [], "error": "sweep failed"}
+
+    return CycleResult(
+        bundle=bundle,
+        envelopes=envelopes,
+        receipts=receipts,
+        plane=plane,
+        sweep=sweep,
+    )

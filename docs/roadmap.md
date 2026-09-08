@@ -13,9 +13,9 @@ Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inferen
 | **0** | **done** | Pin iface + plane inventory freeze. Submodule, CI, docs. No executor. |
 | **1** | **done** | Zero-LLM OPNsense detect → block → `fyber.receipt/v0` + TTL expiry unblock + local notify queue stub + minimal security incident side-record. Rules actor only. [`docs/slice-1-zero-llm.md`](slice-1-zero-llm.md). |
 | **2** | **done** | `notify.operator` → fyber.auditor client (`#39` tickets; drain / poll / apply / ack; intent ≠ actuation). [`docs/slice-2-auditor.md`](slice-2-auditor.md). |
-| **3** | **parallel after 1** | Incident side index (`fyber.incident/v0` overlay). Never gates contain. |
+| **3** | **this PR** | Incident side index (`fyber.incident/v0` overlay). Close clocks, ops kind, `lease_stop` require-incident. Never gates contain. [`docs/slice-3-incident.md`](slice-3-incident.md). |
 | **4** | **done** | Preempt client + H3 drain: `/site/jobs`, `/site/devices`, H4 offline, thin site_defense hook. `lease_id` required. Enqueue ≠ apply. [`docs/slice-4-preempt.md`](slice-4-preempt.md). |
-| **5** | **this PR** | AImmune UI v0 (site SoT; tickets are intent; no `/v1/ir/chat`). [`docs/slice-5-ui.md`](slice-5-ui.md). |
+| **5** | **done** | AImmune UI v0 (site SoT; tickets are intent; no `/v1/ir/chat`). [`docs/slice-5-ui.md`](slice-5-ui.md). |
 
 Then package as one site daemon.
 
@@ -69,7 +69,17 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Tests (mock `#40`/`#41`/H4) + iface-pin CI unchanged
 - Runbook: [`docs/slice-4-preempt.md`](slice-4-preempt.md)
 
-## Slice 5 exit (this PR)
+## Slice 3 exit (this PR)
+
+- `IncidentStore` — security 4h join + ops 1h join; human close; `auto_quiet` (security 24h / ops 2h linked-receipt proxy)
+- `lease_stop` execute requires an open incident (else propose+notify). Health `sell_pause` prefers ops; never invents security
+- Cycle-end sweep after detect/expiry/plane sync; CLI `aimmune incident list|close|sweep`
+- UI `/incidents` enrich + human close; snapshot includes full fyber.incident/v0 + index counts
+- Grant stub (`grant_ids` / `grant_active` / `require_grant_incident_id`) — no mint
+- Tests map to binding acceptance 1–8; iface-pin CI unchanged
+- Runbook: [`docs/slice-3-incident.md`](slice-3-incident.md)
+
+## Slice 5 exit (landed)
 
 - `aimmune.ui.status` — display enums; never blocked from resolve alone
 - `aimmune.owner.local` — local approve/deny via the same apply path as poll

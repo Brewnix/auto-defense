@@ -182,9 +182,31 @@ def test_human_ack_executes_lease_stop(pin) -> None:
         human_approved=True,
         device_id=DEVICE,
         now=now,
+        incident_id=str(uuid4()),
+        incident_open=True,
     )
     assert result.decision == "execute"
     assert result.execute_tools == ["hypermesh.lease_stop"]
+
+
+def test_human_ack_lease_stop_without_incident_force_propose(pin) -> None:
+    now = datetime(2026, 9, 8, tzinfo=timezone.utc)
+    result = decide_preempt(
+        [_stop("site_defense")],
+        pin=pin,
+        site_id="net-tn-cottage",
+        receipt_id=str(uuid4()),
+        actor_kind="rule",
+        origin_actor_kind="rule",
+        reason_code="site_defense",
+        human_approved=True,
+        owner_ack=True,
+        device_id=DEVICE,
+        now=now,
+    )
+    assert result.decision == "propose"
+    assert "hypermesh.lease_stop" not in result.execute_tools
+    assert result.notify is not None
 
 
 def test_unknown_reason_not_execute(pin) -> None:
