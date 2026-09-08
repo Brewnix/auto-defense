@@ -12,6 +12,10 @@ class HeldSnapshotError(ValueError):
 def subject_from_args(args: dict[str, Any]) -> dict[str, str] | None:
     if args.get("ip"):
         return {"kind": "ip", "value": str(args["ip"])}
+    if args.get("lease_id"):
+        return {"kind": "lease", "value": str(args["lease_id"])}
+    if args.get("device_id"):
+        return {"kind": "host", "value": str(args["device_id"])}
     return None
 
 
@@ -28,10 +32,14 @@ def snapshot_from_proposal(proposal: dict[str, Any]) -> dict[str, Any] | None:
         "tool": tool,
         "args": args,
         "subject": subject,
+        "reason_code": proposal.get("reason_code"),
     }
     ttl = proposal.get("ttl_s") or args.get("ttl_s")
     if ttl is not None:
         snap["ttl_s"] = int(ttl)
+    device_id = args.get("device_id") or proposal.get("device_id")
+    if device_id:
+        snap["device_id"] = str(device_id)
     return snap
 
 

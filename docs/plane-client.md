@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Repo:** `Brewnix/auto-defense`  
-**Status:** slice 2 — fyber.auditor site client (create / get / ack). Resolve is plane-only.  
+**Status:** slice 4 — fyber.auditor site client plus Hypermesh `#40` / `#41` jobs + `sell_state`. Resolve is plane-only.  
 **Transport:** **WireGuard** via the existing Panopticon / Hypermesh-host path. **Not Tailscale.**
 
 AImmune is a **client** of the plane. This repo does not fork the gateway, mint tokens, or implement Host jobs. Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface); doors live in [`FyberLabs/panopticon`](https://github.com/FyberLabs/panopticon).
@@ -21,7 +21,7 @@ Do **not** add Tailscale (or any second overlay) as plane transport.
 | `HM_SITE_TOKEN` | yes | Opaque site machine token (`hm_site_…`). Shown once at mint. Not `hm_dev_`, `hm_rtr_`, `hm1.`, or a renter / `purpose: service` key. |
 | `SITE_ID` | yes | This site’s identifier (e.g. `net-tn-cottage`). Must equal the token `site_id` and every `Device.site_id` this daemon talks about. |
 
-Optional later (not slice 0): `$STATE_DIR` for Host H4 when `plane_reachable: false`.
+Host H4 (plane-down): `AIMMUNE_HOST_STATE_DIR` / `HYPERMESH_STATE_DIR` for `owner.sock` + `owner.token` (**0600**). Do not require the site GET / `/site/jobs` doors when `plane_reachable: false`.
 
 ```http
 Authorization: Bearer ${HM_SITE_TOKEN}
@@ -100,6 +100,10 @@ Not a `fyber.receipt/v0` write. Copy Host-reported `sell_state`. Do not invent `
 
 **Plane-down.** Do not require these doors when `plane_reachable: false`. Host H4 unix socket is the owner path.
 
-## Out of slice 2
+Site implementation: [`aimmune.plane.jobs`](../src/aimmune/plane/jobs.py) · [`aimmune.plane.posture`](../src/aimmune/plane/posture.py). H3 sequencing: [`aimmune.preempt.h3`](../src/aimmune/preempt/h3.py). Plane-down: [`aimmune.host.owner`](../src/aimmune/host/owner.py). Runbook: [`docs/slice-4-preempt.md`](slice-4-preempt.md).
 
-No preempt / jobs client, no AImmune UI, no grants / SociACL, no Tailscale, no site-implemented resolve.
+Stale heartbeat: if `last_heartbeat_at` is older than `AIMMUNE_SELL_STATE_STALE_S` (default 300s), treat posture as unknown. Automated stop-only holds.
+
+## Out of slice 4
+
+No AImmune UI, no grants / SociACL, no Tailscale, no site-implemented resolve, no `preempt_mode=hard`, no `schemas/` edits.

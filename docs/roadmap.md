@@ -12,9 +12,9 @@ Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inferen
 |-------|--------|------|
 | **0** | **done** | Pin iface + plane inventory freeze. Submodule, CI, docs. No executor. |
 | **1** | **done** | Zero-LLM OPNsense detect → block → `fyber.receipt/v0` + TTL expiry unblock + local notify queue stub + minimal security incident side-record. Rules actor only. [`docs/slice-1-zero-llm.md`](slice-1-zero-llm.md). |
-| **2** | **this PR** | `notify.operator` → fyber.auditor client (`#39` tickets; drain / poll / apply / ack; intent ≠ actuation). [`docs/slice-2-auditor.md`](slice-2-auditor.md). |
+| **2** | **done** | `notify.operator` → fyber.auditor client (`#39` tickets; drain / poll / apply / ack; intent ≠ actuation). [`docs/slice-2-auditor.md`](slice-2-auditor.md). |
 | **3** | **parallel after 1** | Incident side index (`fyber.incident/v0` overlay). Never gates contain. |
-| **4** | after 2 | Preempt client + H3 drain: `/site/jobs`, `/site/devices`, H4 offline. `lease_id` required. Enqueue ≠ apply. |
+| **4** | **this PR** | Preempt client + H3 drain: `/site/jobs`, `/site/devices`, H4 offline, thin site_defense hook. `lease_id` required. Enqueue ≠ apply. [`docs/slice-4-preempt.md`](slice-4-preempt.md). |
 | **5** | after 4 | AImmune UI v0 (site SoT; tickets are intent; no `/v1/ir/chat`). |
 
 Then package as one site daemon.
@@ -46,7 +46,7 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Tests + pytest CI job; iface-pin CI unchanged
 - Runbook: [`docs/slice-1-zero-llm.md`](slice-1-zero-llm.md)
 
-## Slice 2 exit (this PR)
+## Slice 2 exit (landed)
 
 - Held companion snapshot on enqueue; old rows fall back to the held receipt
 - `aimmune.auditor.client` — create / get / ack with `HM_SITE_TOKEN` (no resolve)
@@ -56,6 +56,18 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Phase A only; incident open/join on propose/hold; never wait on plane
 - Tests (httpx mock) + iface-pin CI unchanged
 - Runbook: [`docs/slice-2-auditor.md`](slice-2-auditor.md)
+
+## Slice 4 exit (this PR)
+
+- `aimmune.plane.jobs` — `#40` POST/GET site jobs (`hm_site_`); `lease_id` required on `lease_stop`
+- `aimmune.plane.posture` — `#41` GET `sell_state` + `AIMMUNE_SELL_STATE_STALE_S` (default 300s)
+- `aimmune.host.owner` — H4 unix socket for plane-down
+- `aimmune.preempt.policy` — strict matrix; profile never grants `hypermesh.*`
+- `aimmune.preempt.h3` — pause result before stops; site_defense pause-fail exception; never `hard`
+- Thin `site_defense` hook (`AIMMUNE_SITE_DEFENSE_PREEMPT`) — propose into the runner; no Host RTT on the IDS cycle
+- CLI `aimmune preempt` (`sell-pause` / `lease-stop` / `drain` / `run`)
+- Tests (mock `#40`/`#41`/H4) + iface-pin CI unchanged
+- Runbook: [`docs/slice-4-preempt.md`](slice-4-preempt.md)
 
 ## Not this repo
 

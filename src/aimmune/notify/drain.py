@@ -8,6 +8,7 @@ from uuid import uuid4
 from aimmune.auditor.client import AuditorError
 from aimmune.canonical import rfc3339
 from aimmune.notify.held import resolve_held, snapshot_from_proposals
+from aimmune.preempt.policy import HYPERMESH_TOOLS
 from aimmune.receipt.chain import build_receipt
 from aimmune.schema import validate_receipt
 
@@ -160,6 +161,8 @@ def poll_tickets(rt: Any) -> PollResult:
         except AuditorError as exc:
             result.errors.append(str(exc)[:200])
             continue
+        if watch.get("preempt_queued"):
+            continue
         status = ticket.get("status")
         if status == "acked":
             watch.update(
@@ -181,6 +184,9 @@ def poll_tickets(rt: Any) -> PollResult:
             child = apply_resolution(rt, watch, ticket)
         except Exception as exc:  # noqa: BLE001
             result.errors.append(str(exc)[:200])
+            continue
+        if watch.get("preempt_queued"):
+            # Host jobs run in `aimmune preempt run`, which acks after apply.
             continue
         try:
             acked = rt.auditor.ack_ticket(str(ticket_id), child["receipt_id"])
@@ -242,6 +248,9 @@ def apply_resolution(
     annotate_text = None
     ttl_s: int | None = held.get("ttl_s") or (held.get("args") or {}).get("ttl_s")
     patch_ok = True
+
+    if str(held.get("tool") or "") in HYPERMESH_TOOLS:
+        return _queue_hypermesh_resolution(rt, watch, ticket, held, held_receipt, resolution)
 
     if resolution == "approved":
         decision = "execute"
@@ -352,6 +361,153 @@ def apply_resolution(
     rt.chain.append(receipt)
     if incident_id:
         rt.incidents.attach_receipt(str(incident_id), child_id)
+    return receipt
+
+
+def _queue_hypermesh_resolution(
+    rt: Any,
+    watch: dict[str, Any],
+    ticket: dict[str, Any],
+    held: dict[str, Any],
+    held_receipt: dict[str, Any],
+    resolution: str,
+) -> dict[str, Any]:
+    """Auditor-approved hypermesh.* goes to the preempt runner — no Host RTT here."""
+    if resolution == "approved":
+        device_id = str(
+            held.get("device_id")
+            or (held.get("args") or {}).get("device_id")
+            or ""
+        )
+        if not device_id:
+            raise RuntimeError("hypermesh companion missing device_id")
+        reason = str(
+            held.get("reason_code")
+            or (held.get("args") or {}).get("reason_code")
+            or "site_defense"
+        )
+        proposals = [
+            {
+                "call_id": p["call_id"],
+                "tool": p["tool"],
+                "mode": "execute",
+                "reason_code": p.get("reason_code") or reason,
+                "args": dict(p.get("args") or {}),
+            }
+            for p in (held_receipt.get("proposals") or [])
+            if p.get("tool") in HYPERMESH_TOOLS
+        ]
+        if not proposals:
+            args = dict(held.get("args") or {})
+            if held.get("tool") == "hypermesh.lease_stop":
+                args["reason_code"] = args.get("reason_code") or reason
+            proposals = [
+                {
+                    "call_id": held["call_id"],
+                    "tool": held["tool"],
+                    "mode": "execute",
+                    "reason_code": reason,
+                    "args": args,
+                }
+            ]
+        rt.preempt_queue.enqueue(
+            queued_at=rt.clock.now(),
+            site_id=rt.config.site_id,
+            device_id=device_id,
+            proposals=proposals,
+            origin_actor=held_receipt.get("actor")
+            or {"kind": "rule", "id": "brewnix-rules/hypermesh-preempt-v0", "purpose": "triage"},
+            reason_code=str(held.get("reason_code") or proposal.get("reason_code") or "site_defense"),
+            human_approved=True,
+            owner_ack=False,
+            trace_id=watch.get("trace_id"),
+            parent_receipt_id=held_receipt["receipt_id"],
+            incident_id=watch.get("incident_id"),
+            ticket_id=ticket.get("ticket_id") or watch.get("ticket_id"),
+            judgment=held_receipt.get("judgment"),
+        )
+        watch.update(
+            {
+                "status": "resolved",
+                "preempt_queued": True,
+                "resolution": resolution,
+                "updated_at": rfc3339(rt.clock.now()),
+            }
+        )
+        rt.watches.upsert(watch)
+        return held_receipt
+
+    annotate_text = f"auditor {resolution}; observe only"
+    annotate = {
+        "call_id": str(uuid4()),
+        "tool": "receipt.annotate",
+        "mode": "execute",
+        "reason_code": "auditor_annotate",
+        "args": {
+            "receipt_id": held_receipt["receipt_id"],
+            "text": annotate_text[:2000],
+        },
+    }
+    now = rt.clock.now()
+    child_id = str(uuid4())
+    receipt = build_receipt(
+        site_id=rt.config.site_id,
+        trace_id=str(uuid4()),
+        ts=now,
+        purpose="triage",
+        posture={
+            "wan_up": rt.config.wan_up,
+            "plane_reachable": rt.config.plane_reachable,
+            "path_b": "n/a",
+            "sell_state": (
+                rt.config.sell_state
+                if rt.config.sell_state in {"off", "on", "paused", "n/a"}
+                else "off"
+            ),
+        },
+        features_digest=(held_receipt.get("input") or {}).get("features_digest")
+        or "sha256:" + ("0" * 64),
+        window_s=int((held_receipt.get("input") or {}).get("window_s") or rt.config.window_s),
+        judgment=held_receipt.get("judgment") or {
+            "severity": "info",
+            "classes": ["unknown"],
+            "subjects": [held.get("subject") or {"kind": "host", "value": rt.config.site_id}],
+            "summary": f"auditor {resolution}",
+            "evidence_refs": ["auditor:ticket"],
+        },
+        actor=held_receipt.get("actor")
+        or {"kind": "rule", "id": "brewnix-rules/hypermesh-preempt-v0", "purpose": "triage"},
+        proposals=[annotate],
+        policy_decision="observe",
+        policy_rule_ids=list((held_receipt.get("policy") or {}).get("rule_ids") or []),
+        execution=[
+            {
+                "call_id": annotate["call_id"],
+                "tool": "receipt.annotate",
+                "status": "applied",
+                "executor": EXECUTOR_NOTIFY,
+                "started_at": rfc3339(now),
+                "finished_at": rfc3339(now),
+                "effect": {
+                    "ticket_id": ticket.get("ticket_id") or watch.get("ticket_id"),
+                    "resolution": resolution,
+                    "patch_applied": False,
+                },
+                "error": None,
+            }
+        ],
+        human_required=True,
+        prev_hash=rt.chain.tip_hash(),
+        parent_id=held_receipt["receipt_id"],
+        receipt_id=child_id,
+        sources=["hypermesh_host"],
+        door="site_defense",
+        resolved_by=ticket.get("resolved_by"),
+        resolved_at=ticket.get("resolved_at") or rfc3339(now),
+        resolution=resolution,
+    )
+    validate_receipt(receipt, rt.config.iface_pin)
+    rt.chain.append(receipt)
     return receipt
 
 
