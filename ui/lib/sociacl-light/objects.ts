@@ -26,8 +26,10 @@ export function irObject(siteId: string): SiteObjectId {
 }
 
 /** :host is deferred. Always fail closed. */
-export function hostObject(_siteId: string): never {
-  throw new Error("site:{site_id}:host is deferred; fail closed");
+export function hostObject(siteId?: string): never {
+  throw new Error(
+    `site:${siteId ?? "{site_id}"}:host is deferred; fail closed`,
+  );
 }
 
 export function parseSiteObject(id: string): SiteObjectId {

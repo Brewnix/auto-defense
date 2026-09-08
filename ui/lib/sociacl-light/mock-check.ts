@@ -56,7 +56,17 @@ export class MockCheck implements DelegateAcl {
   delegateGrants(object: SiteObjectId): readonly DelegateGrant[] {
     return this.grants
       .filter((row) => row.object === object)
-      .map(({ from: _from, ...grant }) => grant);
+      .map((row) => {
+        const grant: DelegateGrant = {
+          object: row.object,
+          accessor: row.accessor,
+          mask: row.mask,
+        };
+        if (row.until !== undefined) {
+          grant.until = row.until;
+        }
+        return grant;
+      });
   }
 
   /** Live grants including MockCheck `from` (inclusive). */

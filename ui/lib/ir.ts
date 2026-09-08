@@ -8,12 +8,11 @@ import {
   resolvePrincipal,
   tokensEqual,
 } from "@/lib/auth";
-import { irCaps } from "@/lib/sociacl-light/gate";
+import { checkIrAct, irCaps, type IrAct, type IrCaps } from "@/lib/sociacl-light/gate";
 import { configuredSiteId } from "@/lib/sociacl-light/objects";
 import { ownerPrincipalsFromEnv } from "@/lib/sociacl-light/principal";
 import { getProcessAcl } from "@/lib/sociacl-light/store";
 import type { AccessorId, CheckResult } from "@/lib/sociacl-light/types";
-import { checkIrAct, type IrAct, type IrCaps } from "@/lib/sociacl-light/gate";
 
 export type IrSession = {
   principal: AccessorId | null;
