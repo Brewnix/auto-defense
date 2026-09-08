@@ -21,10 +21,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { loadSnapshot } from "@/lib/aimmune";
+import { loadIrSession } from "@/lib/ir";
 
 export const dynamic = "force-dynamic";
 
 export default async function PreemptPage() {
+  const session = await loadIrSession();
   let error: string | null = null;
   let snap = null;
   try {
@@ -37,7 +39,11 @@ export default async function PreemptPage() {
   const receipts = snap?.preempt.receipts || [];
 
   return (
-    <AppShell siteId={snap?.site_id} planeReachable={snap?.plane_reachable}>
+    <AppShell
+      siteId={snap?.site_id}
+      planeReachable={snap?.plane_reachable}
+      principal={session.principal}
+    >
       {error ? (
         <Alert variant="destructive">
           <AlertTitle>Could not load preempt state</AlertTitle>

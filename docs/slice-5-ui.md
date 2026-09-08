@@ -14,7 +14,7 @@ Site-local operator console. Tickets are **intent**. Actuation source of truth i
 | | Rule |
 |---|------|
 | A | Next.js App Router + shadcn/ui in this repo (`ui/`). Not FastAPI+HTMX. |
-| B | Auth is `AIMMUNE_UI_TOKEN` bearer. Bind **127.0.0.1** by default (`AIMMUNE_UI_HOST` / `AIMMUNE_UI_PORT`). SociACL is slice 8. |
+| B | Auth is `AIMMUNE_UI_TOKEN` bearer. Bind **127.0.0.1** by default (`AIMMUNE_UI_HOST` / `AIMMUNE_UI_PORT`). SociACL IR UX is [`slice-8-sociacl-ir.md`](slice-8-sociacl-ir.md). |
 | C | Site UI may **local-approve/deny** a held companion when `plane_reachable=false` **or** no plane ticket exists yet. When an auditor watch/ticket exists and the plane is up, show waiting-on-plane (slice 2 poll applies) — **do not double-resolve** from the site. |
 | D | Write surface is local approve/deny plus optional grant propose / plane-down mint-local. Optional short redacted annotate note. No rule-pack editor, no SID UI. |
 | E | Run: `cd ui && npm run dev` / production `npm run start`. Optional `python -m aimmune ui` prints the env checklist and can `--start` Next. |
@@ -29,7 +29,7 @@ Site-local operator console. Tickets are **intent**. Actuation source of truth i
 | Local resolve | `aimmune.owner.local` | Reuses `aimmune.notify.drain.apply_resolution` — no forked apply |
 | CLI | `aimmune owner approve\|deny` · `ui-snapshot` · `ui` | Writes stay in Python |
 | Console | `ui/` | Next.js App Router + shadcn. Reads spawn `ui-snapshot`; writes spawn owner CLI |
-| Auth | `ui/proxy.ts` + `/api/session` | Bearer or httpOnly cookie. Fail closed if token unset in production |
+| Auth | `ui/proxy.ts` + `/api/session` | Bearer or httpOnly cookie. Fail closed if token unset in production. Slice 8 adds cottage principal + MockCheck. |
 
 ## Status copy (source of truth)
 
@@ -73,9 +73,9 @@ Optional `--note` is a short redacted `receipt.annotate` (max 500).
 | `/receipts` | last N receipts — id, **actor kind/id**, purpose, policy.decision, tools, effects, human, parent_id |
 | `/holds` | notify_queue + auditor_watch with status copy; local approve/deny when allowed |
 | `/incidents` | `incidents.jsonl` overlay (slice 3 enrich: kind / status / subjects / links / counts + human close) |
-| `/grants` | slice 7 snapshot list + minimal propose / mint-local; ticket approve ≠ elevation |
+| `/grants` | slice 7 snapshot + propose / mint-local (`GrantStore`); slice 8 Check-gates human propose and home mint. Ticket approve ≠ elevation. |
 | `/preempt` | pending `preempt_queue.jsonl` + recent `hypermesh.*` receipts |
-| `/settings` | token field → httpOnly cookie |
+| `/settings` | token field → httpOnly cookie (slice 8: + cottage principal) |
 
 **Not present:** IR chat, Hypermesh `/v1/ir/chat`, model chat, rule-pack editor, SID UI.
 
@@ -138,4 +138,4 @@ Copy-rule coverage lives in `tests/test_ui_status.py`. Local apply / plane-up re
 
 ## Out of scope
 
-SociACL / dual auth (slice 8) · privilege grants (slice 7) · model triage (slice 6) · IR chat · FastAPI+HTMX · `schemas/` edits · bumping the iface pin · site-implemented plane `POST …/resolve`.
+Privilege grant plane store (slice 7) · plane SociACL resolve · IR chat · FastAPI+HTMX · `schemas/` edits · bumping the iface pin · site-implemented plane `POST …/resolve`. SociACL IR UX is slice 8.

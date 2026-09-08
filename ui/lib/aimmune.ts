@@ -104,3 +104,17 @@ export async function ownerResolve(
   }
   return runAimmune(args);
 }
+
+export async function ownerAnnotate(
+  receiptId: string,
+  note: string,
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  return runAimmune([
+    "owner",
+    "annotate",
+    "--receipt-id",
+    receiptId,
+    "--note",
+    note.trim().slice(0, 500),
+  ]);
+}

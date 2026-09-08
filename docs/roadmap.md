@@ -13,7 +13,7 @@ Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inferen
 | **0** | **done** | Pin iface + plane inventory freeze. Submodule, CI, docs. No executor. |
 | **1** | **done** | Zero-LLM OPNsense detect → block → `fyber.receipt/v0` + TTL expiry unblock + local notify queue stub + minimal security incident side-record. Rules actor only. [`docs/slice-1-zero-llm.md`](slice-1-zero-llm.md). |
 | **2** | **done** | `notify.operator` → fyber.auditor client (`#39` tickets; drain / poll / apply / ack; intent ≠ actuation). [`docs/slice-2-auditor.md`](slice-2-auditor.md). |
-| **3** | **this PR** | Incident side index (`fyber.incident/v0` overlay). Close clocks, ops kind, `lease_stop` require-incident. Never gates contain. [`docs/slice-3-incident.md`](slice-3-incident.md). |
+| **3** | **done** | Incident side index (`fyber.incident/v0` overlay). Close clocks, ops kind, `lease_stop` require-incident. Never gates contain. [`docs/slice-3-incident.md`](slice-3-incident.md). |
 | **4** | **done** | Preempt client + H3 drain: `/site/jobs`, `/site/devices`, H4 offline, thin site_defense hook. `lease_id` required. Enqueue ≠ apply. [`docs/slice-4-preempt.md`](slice-4-preempt.md). |
 | **5** | **done** | AImmune UI v0 (site SoT; tickets are intent; no `/v1/ir/chat`). [`docs/slice-5-ui.md`](slice-5-ui.md). |
 
@@ -25,8 +25,8 @@ Then package as one site daemon.
 |-------|------|------|
 | **6** | **done** | Model triage (`actor.kind: model`, local-only cottage v0). LLM judges; policy executes. [`docs/slice-6-model-triage.md`](slice-6-model-triage.md). |
 | **7** | **done** | Privilege grant site client (`#50`). Plane mint / site cache / home offline mint. [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md). |
-| **8** | later | SociACL IR UX (`Check` / `delegate` for human resolve / mint). Dual auth with `hm_site_`. |
-| **9** | **this PR** | Package: one site daemon + host wiring runbook (no image bake). [`docs/slice-9-package.md`](slice-9-package.md). |
+| **8** | **this PR** | SociACL IR UX (`Check` / `delegate` for human resolve / mint). Dual auth with `hm_site_`. [`docs/slice-8-sociacl-ir.md`](slice-8-sociacl-ir.md). |
+| **9** | **done** | Package: one site daemon + host wiring runbook (no image bake). [`docs/slice-9-package.md`](slice-9-package.md). |
 
 Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 3. Slice 8 stays off the critical path until grants exist. Slice 6 is judge-only; slice 7 mints / caches grants.
 
@@ -69,7 +69,7 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Tests (mock `#40`/`#41`/H4) + iface-pin CI unchanged
 - Runbook: [`docs/slice-4-preempt.md`](slice-4-preempt.md)
 
-## Slice 3 exit (this PR)
+## Slice 3 exit (landed)
 
 - `IncidentStore` — security 4h join + ops 1h join; human close; `auto_quiet` (security 24h / ops 2h linked-receipt proxy)
 - `lease_stop` execute requires an open incident (else propose+notify). Health `sell_pause` prefers ops; never invents security
@@ -90,7 +90,7 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Runbook: [`docs/slice-6-model-triage.md`](slice-6-model-triage.md)
 - Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
 
-## Slice 7 exit (this PR)
+## Slice 7 exit (landed)
 
 - `aimmune.grants` — #50 propose / get / list (no resolve/revoke); local ladder validate; `$STATE_DIR/grants.jsonl`
 - Plane mint SoT when up; cache `active_until` if plane drops; home `mint-local` is site-local only
@@ -103,7 +103,7 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Runbook: [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md)
 - Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
 
-## Slice 9 exit (this PR)
+## Slice 9 exit (landed)
 
 - Two systemd units: `aimmune.service` (`aimmune loop`) required; `aimmune-ui.service` optional (`next start` on 127.0.0.1). Next is **not** embedded in Python
 - In-repo artifact: pip `aimmune` + `deploy/systemd/*.service` + `deploy/aimmune.env.example` + `deploy/install.sh`. No `.deb`/`.rpm`
@@ -113,6 +113,18 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - UI remains a sibling `npm ci && npm run build`. Iface-pin CI unchanged
 - Runbook: [`docs/slice-9-package.md`](slice-9-package.md)
 - Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
+
+## Slice 8 exit (this PR)
+
+- `ui/lib/sociacl-light` — copied IR light contract from SociACL **master** (`docs/aimmune-ir-check.d.ts` @ `4218cd4022b452d6329007a37b39ee16457facf4` / `.md` @ `38fb1a5b20c05f429af5283f95226d2360aee2c8`; landed via #14) + in-memory MockCheck
+- Dual auth: `AIMMUNE_UI_TOKEN` loopback smoke; human acts re-Check SIWE / cottage principal
+- `AIMMUNE_OWNER_PRINCIPALS` owner gate; `break_glass` = execute on `:ir` **and** owner (not a SociACL verb)
+- `/holds` local resolve gated `execute`; annotate gated `write`; redacted view `see`/`read`
+- `/grants` Check-gates slice 7 plane `#50` propose (when up) and `GrantStore` `mint-local` (plane down). Body stays Brewnix `fyber.privilege_grant/v0` (≠ delegate)
+- `:host` / per-incident objects fail closed. Contain / expiry never import Check
+- Plane `POST …/resolve` remains JWT — documented gap
+- Tests: MockCheck binding 1–6 + annotate pytest; iface pin unchanged
+- Runbook: [`docs/slice-8-sociacl-ir.md`](slice-8-sociacl-ir.md)
 
 ## Slice 5 exit (landed)
 

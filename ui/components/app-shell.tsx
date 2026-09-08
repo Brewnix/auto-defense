@@ -18,10 +18,12 @@ export function AppShell({
   children,
   siteId,
   planeReachable,
+  principal,
 }: {
   children: ReactNode;
   siteId?: string;
   planeReachable?: boolean;
+  principal?: string | null;
 }) {
   return (
     <div className="flex min-h-full flex-col">
@@ -41,6 +43,11 @@ export function AppShell({
                   {planeReachable ? "plane reachable" : "plane down"}
                 </Badge>
               )}
+              {principal ? (
+                <Badge variant="outline" className="font-mono">
+                  {principal}
+                </Badge>
+              ) : null}
             </div>
           </div>
           <nav className="flex flex-wrap gap-2">

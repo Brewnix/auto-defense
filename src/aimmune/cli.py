@@ -27,7 +27,8 @@ from aimmune.grants.propose import build_asks, build_propose_body
 from aimmune.grants.validate import GrantValidationError
 from aimmune.incident.minimal import GrantActiveError, IncidentError
 from aimmune.notify.drain import drain_queue, poll_tickets
-from aimmune.owner.local import WaitingOnPlaneError, local_resolve
+from aimmune.owner.annotate import local_annotate
+from aimmune.owner.local import LocalResolveError, WaitingOnPlaneError, local_resolve
 from aimmune.preempt.runner import cli_preempt, run_preempt_queue
 from aimmune.receipt.chain import verify_chain
 from aimmune.status import build_status, format_status_text
@@ -156,6 +157,24 @@ def cmd_poll_tickets(args: argparse.Namespace) -> int:
 
 def cmd_owner(args: argparse.Namespace) -> int:
     rt = _runtime_from_args(args)
+    if args.owner_cmd == "annotate":
+        try:
+            child = local_annotate(rt, args.receipt_id, args.note)
+        except LocalResolveError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
+        print(
+            canonical_dumps(
+                {
+                    "receipt_id": child.get("receipt_id"),
+                    "parent_id": child.get("parent_id"),
+                    "purpose": child.get("purpose"),
+                    "decision": (child.get("policy") or {}).get("decision"),
+                    "annotate": True,
+                }
+            )
+        )
+        return 0
     resolution = "approved" if args.owner_cmd == "approve" else "denied"
     try:
         child = local_resolve(
@@ -167,6 +186,9 @@ def cmd_owner(args: argparse.Namespace) -> int:
     except WaitingOnPlaneError as exc:
         print(f"ERROR: waiting on plane: {exc}", file=sys.stderr)
         return 2
+    except LocalResolveError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
     print(
         canonical_dumps(
             {
@@ -416,6 +438,8 @@ def cmd_ui(args: argparse.Namespace) -> int:
     token_set = bool(cfg.ui_token)
     checklist = {
         "AIMMUNE_UI_TOKEN": "set" if token_set else "MISSING (required to serve)",
+        "AIMMUNE_OWNER_PRINCIPALS": list(cfg.owner_principals),
+        "AIMMUNE_UI_SMOKE_PRINCIPAL": "set" if cfg.ui_smoke_principal else "unset",
         "AIMMUNE_UI_HOST": cfg.ui_host,
         "AIMMUNE_UI_PORT": cfg.ui_port,
         "AIMMUNE_STATE_DIR": str(cfg.state_dir),
@@ -661,6 +685,12 @@ def main(argv: list[str] | None = None) -> int:
             help="optional short redacted annotate note (max 500)",
         )
         p.set_defaults(func=cmd_owner, owner_cmd=action)
+
+    ann = owner_sub.add_parser("annotate", help="write-only redacted annotate (does not resolve)")
+    _add_shared(ann)
+    ann.add_argument("--receipt-id", required=True)
+    ann.add_argument("--note", required=True, help="short redacted annotate note (max 500)")
+    ann.set_defaults(func=cmd_owner, owner_cmd="annotate")
 
     snap = sub.add_parser(
         "ui-snapshot",

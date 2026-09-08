@@ -14,10 +14,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { loadSnapshot } from "@/lib/aimmune";
+import { loadIrSession } from "@/lib/ir";
 
 export const dynamic = "force-dynamic";
 
 export default async function GrantsPage() {
+  const session = await loadIrSession();
   let error: string | null = null;
   let snap = null;
   try {
@@ -27,7 +29,11 @@ export default async function GrantsPage() {
   }
 
   return (
-    <AppShell siteId={snap?.site_id} planeReachable={snap?.plane_reachable}>
+    <AppShell
+      siteId={snap?.site_id}
+      planeReachable={snap?.plane_reachable}
+      principal={session.principal}
+    >
       {error ? (
         <Alert variant="destructive">
           <AlertTitle>Could not load grants</AlertTitle>
@@ -39,17 +45,24 @@ export default async function GrantsPage() {
         <p className="text-sm text-muted-foreground">
           Time-bounded policy elevation for one incident. Ticket approved is not
           an elevation. Grant approved is not a firewall apply. Resolve/revoke
-          stay on the plane.
+          stay on the plane. Human propose / mint-local re-Check{" "}
+          <code>execute</code> on <code>{session.caps.object}</code>;{" "}
+          <code>break_glass</code> also requires an owner principal.
         </p>
       </div>
       <Alert>
         <AlertTitle>Ticket ≠ grant ≠ apply</AlertTitle>
         <AlertDescription>
           An auditor ticket approve does not mint rails. An approved grant does
-          not apply a block. Site never POSTs /resolve or /revoke.
+          not apply a block. Site never POSTs /resolve or /revoke. Plane #50
+          propose when up; home mint-local when the plane is down (GrantStore).
         </AlertDescription>
       </Alert>
-      <GrantPropose planeReachable={snap?.plane_reachable} />
+      <GrantPropose
+        planeReachable={snap?.plane_reachable}
+        canMint={session.caps.execute}
+        canBreakGlass={session.caps.break_glass}
+      />
       {!snap?.grants?.length ? (
         <EmptyState
           icon={KeyRoundIcon}

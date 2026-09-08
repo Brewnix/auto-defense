@@ -10,16 +10,22 @@ import { Textarea } from "@/components/ui/textarea";
 export function HoldActions({
   receiptId,
   canLocal,
+  canExecute,
+  canWrite,
 }: {
   receiptId: string;
   canLocal: boolean;
+  canExecute: boolean;
+  canWrite: boolean;
 }) {
   const router = useRouter();
   const [note, setNote] = useState("");
-  const [busy, setBusy] = useState<"approve" | "deny" | null>(null);
+  const [busy, setBusy] = useState<"approve" | "deny" | "annotate" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  if (!canLocal) {
+  const showResolve = canLocal && canExecute;
+  const showAnnotate = canWrite;
+  if (!showResolve && !showAnnotate) {
     return null;
   }
 
@@ -33,7 +39,7 @@ export function HoldActions({
         body: JSON.stringify({
           receipt_id: receiptId,
           action,
-          note: note.trim() || undefined,
+          note: canWrite && note.trim() ? note.trim() : undefined,
         }),
       });
       const payload = (await response.json()) as { error?: string };
@@ -50,31 +56,82 @@ export function HoldActions({
     }
   }
 
+  async function annotateOnly() {
+    if (!note.trim()) {
+      setError("note required");
+      return;
+    }
+    setBusy("annotate");
+    setError(null);
+    try {
+      const response = await fetch("/api/annotate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          receipt_id: receiptId,
+          note: note.trim(),
+        }),
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setError(payload.error || "annotate failed");
+        return;
+      }
+      setNote("");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "annotate failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <FieldGroup>
-      <Field>
-        <FieldLabel htmlFor={`note-${receiptId}`}>Optional note</FieldLabel>
-        <Textarea
-          id={`note-${receiptId}`}
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          maxLength={500}
-          rows={2}
-          placeholder="Short redacted annotate (optional)"
-        />
-        <FieldDescription>Local approve/deny only. No plane resolve.</FieldDescription>
-      </Field>
+      {showAnnotate ? (
+        <Field>
+          <FieldLabel htmlFor={`note-${receiptId}`}>Optional note</FieldLabel>
+          <Textarea
+            id={`note-${receiptId}`}
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            maxLength={500}
+            rows={2}
+            placeholder="Short redacted annotate (write on :ir)"
+          />
+          <FieldDescription>
+            write without execute is annotate-only. Re-Check at act time.
+          </FieldDescription>
+        </Field>
+      ) : (
+        <FieldDescription>
+          execute on :ir — note omitted (write not granted).
+        </FieldDescription>
+      )}
       <div className="flex flex-wrap gap-2">
-        <Button onClick={() => act("approve")} disabled={busy !== null}>
-          {busy === "approve" ? "Approving…" : "Approve locally"}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => act("deny")}
-          disabled={busy !== null}
-        >
-          {busy === "deny" ? "Denying…" : "Deny locally"}
-        </Button>
+        {showResolve ? (
+          <>
+            <Button onClick={() => act("approve")} disabled={busy !== null}>
+              {busy === "approve" ? "Approving…" : "Approve locally"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => act("deny")}
+              disabled={busy !== null}
+            >
+              {busy === "deny" ? "Denying…" : "Deny locally"}
+            </Button>
+          </>
+        ) : null}
+        {showAnnotate ? (
+          <Button
+            variant="secondary"
+            onClick={annotateOnly}
+            disabled={busy !== null}
+          >
+            {busy === "annotate" ? "Annotating…" : "Annotate only"}
+          </Button>
+        ) : null}
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </FieldGroup>

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   bearerFromHeader,
   isBlockedStatus,
+  resolvePrincipal,
   tokensEqual,
 } from "./auth";
 import { statusBadgeVariant } from "@/components/status-badge";
@@ -41,5 +42,17 @@ describe("bearer token", () => {
     expect(tokensEqual("abc", "abd")).toBe(false);
     expect(tokensEqual("", "abc")).toBe(false);
     expect(tokensEqual(null, "abc")).toBe(false);
+  });
+});
+
+describe("dual principal", () => {
+  it("prefers SIWE / cottage session over smoke", () => {
+    const { principal, source } = resolvePrincipal({
+      cookie: "0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      header: null,
+      tokenOk: true,
+    });
+    expect(principal).toBe("0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+    expect(source).toBe("siwe");
   });
 });

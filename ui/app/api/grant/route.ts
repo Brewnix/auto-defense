@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { grantPropose } from "@/lib/aimmune";
+import { requireIrAct } from "@/lib/ir";
 
 export async function POST(request: Request) {
   let body: {
@@ -26,10 +27,19 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  const profile = body.profile || "ir_elevated";
+  const act = profile === "break_glass" ? "break_glass" : "mint";
+  const gate = await requireIrAct(act);
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: gate.error, check: gate.check },
+      { status: gate.status },
+    );
+  }
   const result = await grantPropose({
     action: body.action || "propose",
     incident_id: incidentId,
-    profile: body.profile || "ir_elevated",
+    profile,
     ttl: Number(body.ttl) || 1800,
     reason,
     tools: body.tools,
