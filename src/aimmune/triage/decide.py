@@ -299,16 +299,3 @@ def select_winner(
         reason="observe",
         failure=failure,
     )
-
-
-def force_model_propose(envelope: dict[str, Any]) -> dict[str, Any]:
-    """Companion tools from a model stay propose when allow_model_execute is false."""
-    out = dict(envelope)
-    proposals = []
-    for proposal in envelope.get("proposals") or []:
-        item = dict(proposal)
-        if item.get("tool") in COMPANION_TOOLS | HYPERMESH_TOOLS:
-            item["mode"] = "propose"
-        proposals.append(item)
-    out["proposals"] = proposals
-    return out
