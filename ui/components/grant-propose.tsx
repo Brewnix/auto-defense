@@ -8,10 +8,19 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export function GrantPropose({ planeReachable }: { planeReachable?: boolean }) {
+export function GrantPropose({
+  planeReachable,
+  canMint,
+  canBreakGlass,
+}: {
+  planeReachable?: boolean;
+  canMint?: boolean;
+  canBreakGlass?: boolean;
+}) {
   const router = useRouter();
   const [incidentId, setIncidentId] = useState("");
   const [profile, setProfile] = useState(planeReachable ? "ir_elevated" : "break_glass");
+  const allowed = profile === "break_glass" ? Boolean(canBreakGlass) : Boolean(canMint);
   const [ttl, setTtl] = useState(planeReachable ? "14400" : "1800");
   const [reason, setReason] = useState("");
   const [tools, setTools] = useState("health.restart_service,notify.operator");
@@ -123,13 +132,19 @@ export function GrantPropose({ planeReachable }: { planeReachable?: boolean }) {
             />
           </Field>
         ) : null}
-        <Button type="submit" disabled={busy || !incidentId || !reason}>
+        <Button type="submit" disabled={busy || !incidentId || !reason || !allowed}>
           {busy
             ? "Submitting…"
             : planeReachable
               ? "Propose to plane"
               : "Mint local (plane down)"}
         </Button>
+        {!allowed ? (
+          <p className="text-sm text-muted-foreground">
+            Check {profile === "break_glass" ? "break_glass (execute + owner)" : "execute"}{" "}
+            on :ir is required. Re-Check at act.
+          </p>
+        ) : null}
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         {ok ? <p className="text-sm text-muted-foreground">grant {ok}</p> : null}
       </FieldGroup>

@@ -13,10 +13,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { loadSnapshot } from "@/lib/aimmune";
+import { loadIrSession } from "@/lib/ir";
+import { redactReceipt } from "@/lib/redact";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReceiptsPage() {
+  const session = await loadIrSession();
   let error: string | null = null;
   let snap = null;
   try {
@@ -24,9 +27,16 @@ export default async function ReceiptsPage() {
   } catch (err) {
     error = err instanceof Error ? err.message : "snapshot failed";
   }
+  const receipts = (snap?.receipts || []).map((row) =>
+    session.caps.read ? row : redactReceipt(row),
+  );
 
   return (
-    <AppShell siteId={snap?.site_id} planeReachable={snap?.plane_reachable}>
+    <AppShell
+      siteId={snap?.site_id}
+      planeReachable={snap?.plane_reachable}
+      principal={session.principal}
+    >
       {error ? (
         <Alert variant="destructive">
           <AlertTitle>Could not load receipts</AlertTitle>
@@ -40,7 +50,7 @@ export default async function ReceiptsPage() {
           prompts and EVE payloads are stripped.
         </p>
       </div>
-      {!snap?.receipts.length ? (
+      {!receipts.length ? (
         <EmptyState
           icon={ReceiptIcon}
           title="No receipts"
@@ -62,7 +72,7 @@ export default async function ReceiptsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {snap.receipts.map((row) => (
+            {receipts.map((row) => (
               <TableRow key={row.receipt_id}>
                 <TableCell className="font-mono text-xs">{row.receipt_id}</TableCell>
                 <TableCell className="font-mono text-xs">

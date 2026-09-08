@@ -22,7 +22,7 @@ Site client for Panopticon **#50** (`/api/v1/grants/v0/grants`). Automations pro
 | E | `break_glass` home: local mint requires open incident + auditor ticket id (or local ticket stub) + notes; clamp TTL ≤3600 prefer 1800. Plane-up BG is plane-resolved — site **never** `POST …/resolve`. |
 | F | [`docs/plane-client.md`](plane-client.md) cites #50 doors like #39 / #40 / #41. |
 
-Also locked from privilege-grant-v0: five ask kinds only; empty asks → refuse (use a ticket); profile ladder strict / `ir_elevated`≤8h / `break_glass`≤60m; `incident_id` required; `hypermesh.*` never implied by profile; LLM never `resolved_by`; no prompts in the grant body; ticket approved ≠ elevation; grant approved ≠ firewall apply; no SociACL (slice 8); no Phase B cooldown; no home→plane sync door.
+Also locked from privilege-grant-v0: five ask kinds only; empty asks → refuse (use a ticket); profile ladder strict / `ir_elevated`≤8h / `break_glass`≤60m; `incident_id` required; `hypermesh.*` never implied by profile; LLM never `resolved_by`; no prompts in the grant body; ticket approved ≠ elevation; grant approved ≠ firewall apply; no SociACL on the grant body (slice 8 Check-gates the existing UI/API; plane when up, home mint-local when down); no Phase B cooldown; no home→plane sync door.
 
 ## SoT
 

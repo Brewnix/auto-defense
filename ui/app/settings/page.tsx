@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { loadIrSession } from "@/lib/ir";
 
 import { TokenForm } from "./token-form";
 
@@ -19,13 +20,15 @@ export default async function SettingsPage({
 }) {
   const params = await searchParams;
   const reason = params.reason;
+  const session = await loadIrSession();
   return (
-    <AppShell>
+    <AppShell principal={session.principal}>
       <div className="flex flex-col gap-2">
         <h2 className="font-heading text-xl font-medium">Settings</h2>
         <p className="text-sm text-muted-foreground">
-          Bearer token only. SociACL is slice 8. Bind defaults to 127.0.0.1 —
-          set <code>AIMMUNE_UI_HOST=0.0.0.0</code> only as an explicit opt-in.
+          Dual auth: <code>AIMMUNE_UI_TOKEN</code> for loopback smoke;
+          production human path requires Check (SIWE / cottage principal).
+          Machine doors stay <code>hm_site_</code>. Bind defaults to 127.0.0.1.
         </p>
       </div>
       {reason === "unset" ? (
@@ -48,15 +51,25 @@ export default async function SettingsPage({
       ) : null}
       <Card>
         <CardHeader>
-          <CardTitle>UI token</CardTitle>
+          <CardTitle>UI token + principal</CardTitle>
           <CardDescription>
-            Must match the server env. Never commit the token.
+            Token must match the server env. Principal is the cottage SIWE
+            address used at Check time. Never commit secrets.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <TokenForm />
         </CardContent>
       </Card>
+      <Alert>
+        <AlertTitle>Check caps</AlertTitle>
+        <AlertDescription>
+          object {session.caps.object} · read {String(session.caps.read)} · write{" "}
+          {String(session.caps.write)} · execute {String(session.caps.execute)} ·
+          break_glass {String(session.caps.break_glass)} · source{" "}
+          {session.source || "none"}
+        </AlertDescription>
+      </Alert>
     </AppShell>
   );
 }

@@ -12,10 +12,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { loadSnapshot } from "@/lib/aimmune";
+import { loadIrSession } from "@/lib/ir";
 
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
+  const session = await loadIrSession();
   let error: string | null = null;
   let snap = null;
   try {
@@ -25,7 +27,11 @@ export default async function OverviewPage() {
   }
 
   return (
-    <AppShell siteId={snap?.site_id} planeReachable={snap?.plane_reachable}>
+    <AppShell
+      siteId={snap?.site_id}
+      planeReachable={snap?.plane_reachable}
+      principal={session.principal}
+    >
       {error ? (
         <Alert variant="destructive">
           <AlertTitle>Could not load site state</AlertTitle>
@@ -85,11 +91,12 @@ export default async function OverviewPage() {
         />
       )}
       <Alert>
-        <AlertTitle>Read-mostly console</AlertTitle>
+        <AlertTitle>SociACL IR UX (slice 8)</AlertTitle>
         <AlertDescription>
-          Writes are local approve/deny of a held companion, plus optional grant
-          propose / plane-down mint-local on /grants. No IR chat, no rule-pack
-          editor, no SID UI. Ticket approve is not elevation.
+          Local approve/deny and grant propose / plane-down mint-local re-Check
+          execute on :ir. Annotate is write only. No IR chat, no rule-pack
+          editor, no SID UI. Ticket approve is not elevation. Plane POST …/resolve
+          stays JWT. Machine doors stay hm_site_.
         </AlertDescription>
       </Alert>
     </AppShell>

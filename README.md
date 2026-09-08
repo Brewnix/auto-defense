@@ -2,9 +2,10 @@
 
 **Product:** AImmune  
 **Engineering repo:** [`Brewnix/auto-defense`](https://github.com/Brewnix/auto-defense) (this repo)  
-**Status:** **slice 9** — one site daemon + host wiring runbook on top of slices 1–7. See [`docs/slice-9-package.md`](docs/slice-9-package.md). SociACL (slice 8) is later.  
+**Status:** **slice 8** — SociACL IR UX (MockCheck) on top of slices 0–7 and 9. See [`docs/slice-8-sociacl-ir.md`](docs/slice-8-sociacl-ir.md).  
 **License:** [MIT](LICENSE)  
 **Contracts:** pin [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208) in [`vendor/inference-iface`](vendor/inference-iface). Do **not** fork or weaken those locks here.  
+**SociACL consume (copy / re-type, master — not the PR branch):** [`docs/aimmune-ir-check.d.ts`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.d.ts) (`4218cd4022b452d6329007a37b39ee16457facf4`) · [`docs/aimmune-ir-check.md`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.md) (`38fb1a5b20c05f429af5283f95226d2360aee2c8`). Landed via [SociACL #14](https://github.com/FyberLabs/SociACL/pull/14). Do not `npm install sociacl`.  
 **CI:** [iface pin](.github/workflows/iface-pin.yml) — checkout with submodules; fail if pin missing; validate `schemas/*.v0.json` + examples.
 
 Site-local sense → decide → act → receipt. Policy + typed actuators execute. The LLM judges only. Offline-first when Panopticon is unreachable.
@@ -51,7 +52,7 @@ Full table: [`docs/slice-0-inventory.md`](docs/slice-0-inventory.md). Roadmap: [
 
 ## Recommended vertical
 
-`0 → 1 → 2 → 4 → 5` then package. **Slices 0–7 and 9 in this tree** (3 parallel after 1; 8 later).
+`0 → 1 → 2 → 4 → 5` then package. **Slices 0–7 and 9 landed; 8 this PR.**
 
 ```bash
 python -m pip install -e '.[dev]'
@@ -68,8 +69,8 @@ pytest
 5. AImmune UI v0 — [`docs/slice-5-ui.md`](docs/slice-5-ui.md) — **landed**  
 6. Model triage — [`docs/slice-6-model-triage.md`](docs/slice-6-model-triage.md) — **landed**  
 7. Privilege grant — [`docs/slice-7-privilege-grant.md`](docs/slice-7-privilege-grant.md) — **landed**  
-8. SociACL IR UX  
-9. Package as one site daemon — [`docs/slice-9-package.md`](docs/slice-9-package.md) — **this tree**
+8. SociACL IR UX — [`docs/slice-8-sociacl-ir.md`](docs/slice-8-sociacl-ir.md) — **this PR**  
+9. Package as one site daemon — [`docs/slice-9-package.md`](docs/slice-9-package.md) — **landed**
 
 ## Plane doors (cite, don’t reimplement)
 
@@ -98,7 +99,7 @@ python -m aimmune ui                # env checklist
 cd ui && npm install && npm run dev # 127.0.0.1:3000
 ```
 
-`AIMMUNE_UI_HOST=0.0.0.0` is an explicit opt-in only. Local approve/deny: `python -m aimmune owner approve --receipt-id …` (refused when a ticket exists and the plane is up).
+`AIMMUNE_UI_HOST=0.0.0.0` is an explicit opt-in only. Local approve/deny: `python -m aimmune owner approve --receipt-id …` (refused when a ticket exists and the plane is up). Slice 8 re-Checks `execute` on `site:{SITE_ID}:ir` at act time; set `AIMMUNE_OWNER_PRINCIPALS` + `AIMMUNE_UI_SMOKE_PRINCIPAL` for loopback MockCheck. Plane grant propose (slice 7) when up; home `mint-local` when the plane is down.
 
 ## Cottage install (slice 9)
 

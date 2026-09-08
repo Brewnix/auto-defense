@@ -15,10 +15,13 @@ import {
 } from "@/components/ui/table";
 import { loadSnapshot } from "@/lib/aimmune";
 import { formatSubject } from "@/lib/incident";
+import { loadIrSession } from "@/lib/ir";
+import { redactIncident } from "@/lib/redact";
 
 export const dynamic = "force-dynamic";
 
 export default async function IncidentsPage() {
+  const session = await loadIrSession();
   let error: string | null = null;
   let snap = null;
   try {
@@ -26,9 +29,16 @@ export default async function IncidentsPage() {
   } catch (err) {
     error = err instanceof Error ? err.message : "snapshot failed";
   }
+  const incidents = (snap?.incidents || []).map((row) =>
+    session.caps.read ? row : redactIncident(row),
+  );
 
   return (
-    <AppShell siteId={snap?.site_id} planeReachable={snap?.plane_reachable}>
+    <AppShell
+      siteId={snap?.site_id}
+      planeReachable={snap?.plane_reachable}
+      principal={session.principal}
+    >
       {error ? (
         <Alert variant="destructive">
           <AlertTitle>Could not load incidents</AlertTitle>
@@ -42,7 +52,7 @@ export default async function IncidentsPage() {
           is not gated on this store. Human close is refused while grant_active.
         </p>
       </div>
-      {!snap?.incidents.length ? (
+      {!incidents.length ? (
         <EmptyState
           icon={FolderOpenIcon}
           title="No incidents"
@@ -65,7 +75,7 @@ export default async function IncidentsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {snap.incidents.map((row) => (
+            {incidents.map((row) => (
               <TableRow key={row.incident_id}>
                 <TableCell className="font-mono text-xs">{row.incident_id}</TableCell>
                 <TableCell>

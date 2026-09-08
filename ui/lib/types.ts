@@ -102,6 +102,7 @@ export type GrantAsk = {
 };
 
 export type GrantRow = {
+  schema?: string;
   grant_id?: string;
   incident_id?: string;
   site_id?: string;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { ownerResolve } from "@/lib/aimmune";
+import { requireIrAct } from "@/lib/ir";
 
 export async function POST(request: Request) {
   let body: { receipt_id?: string; action?: string; note?: string } = {};
@@ -20,6 +21,22 @@ export async function POST(request: Request) {
       { error: "receipt_id and action=approve|deny required" },
       { status: 400 },
     );
+  }
+  const gate = await requireIrAct("resolve");
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: gate.error, check: gate.check },
+      { status: gate.status },
+    );
+  }
+  if (body.note?.trim()) {
+    const write = await requireIrAct("annotate");
+    if (!write.ok) {
+      return NextResponse.json(
+        { error: "note requires write on :ir (write without execute is annotate-only)", check: write.check },
+        { status: write.status },
+      );
+    }
   }
   const result = await ownerResolve(receiptId, action, body.note);
   if (result.code === 2) {

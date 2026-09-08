@@ -130,6 +130,9 @@ class Config:
     ui_token: str | None = None
     ui_host: str = DEFAULT_UI_HOST
     ui_port: int = DEFAULT_UI_PORT
+    owner_principals: tuple[str, ...] = ()
+    ui_smoke_principal: str | None = None
+    sociacl_fixture: Path | None = None
     triage: TriageSettings = field(default_factory=TriageSettings)
 
     @property
@@ -293,6 +296,9 @@ def load_config(
         ui_host=(os.environ.get("AIMMUNE_UI_HOST") or DEFAULT_UI_HOST).strip()
         or DEFAULT_UI_HOST,
         ui_port=int(os.environ.get("AIMMUNE_UI_PORT", str(DEFAULT_UI_PORT))),
+        owner_principals=_csv_list("AIMMUNE_OWNER_PRINCIPALS"),
+        ui_smoke_principal=os.environ.get("AIMMUNE_UI_SMOKE_PRINCIPAL") or None,
+        sociacl_fixture=_optional_path("AIMMUNE_SOCIACL_FIXTURE"),
         triage=parse_triage_settings(
             rails_profile=(
                 os.environ.get("AIMMUNE_RAILS_PROFILE", DEFAULT_RAILS_PROFILE).strip()

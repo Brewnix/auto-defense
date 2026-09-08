@@ -1,0 +1,13 @@
+{
+  "objects": [
+    {
+      "object": "site:net-tn-cottage",
+      "owner": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "object": "site:net-tn-cottage:ir",
+      "owner": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "grants": []
+}
