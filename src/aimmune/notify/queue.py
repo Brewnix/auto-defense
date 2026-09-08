@@ -28,6 +28,7 @@ class NotifyQueue:
         proposal: dict[str, Any],
         incident_id: str | None = None,
         policy_decision: str,
+        held: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if self.fail_next_write:
             self.fail_next_write = False
@@ -40,6 +41,7 @@ class NotifyQueue:
             "incident_id": incident_id,
             "policy_decision": policy_decision,
             "proposal": proposal,
+            "held": held,
             "drained": False,
             "ticket_id": None,
         }

@@ -1,4 +1,4 @@
-"""CLI: one cycle or optional loop. No model, no plane auditor client."""
+"""CLI: cycle, loop, drain, poll-tickets. Resolve stays plane-only."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from pathlib import Path
 from aimmune.canonical import canonical_dumps
 from aimmune.config import load_config
 from aimmune.cycle import build_runtime, run_cycle
+from aimmune.notify.drain import drain_queue, poll_tickets
 from aimmune.receipt.chain import verify_chain
 
 
@@ -40,6 +41,7 @@ def cmd_cycle(args: argparse.Namespace) -> int:
         "purposes": [r["purpose"] for r in result.receipts],
         "state_dir": str(rt.config.state_dir),
         "plane_reachable": rt.config.plane_reachable,
+        "plane": result.plane,
     }
     print(canonical_dumps(summary))
     return 0
@@ -61,11 +63,37 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_drain(args: argparse.Namespace) -> int:
+    rt = _runtime_from_args(args)
+    if rt.auditor is None:
+        print(
+            "ERROR: PANOPTICON_BASE_URL and HM_SITE_TOKEN required for drain",
+            file=sys.stderr,
+        )
+        return 1
+    result = drain_queue(rt)
+    print(canonical_dumps(result.as_dict()))
+    return 0 if result.drained or not rt.notify.pending() else 1
+
+
+def cmd_poll_tickets(args: argparse.Namespace) -> int:
+    rt = _runtime_from_args(args)
+    if rt.auditor is None:
+        print(
+            "ERROR: PANOPTICON_BASE_URL and HM_SITE_TOKEN required for poll-tickets",
+            file=sys.stderr,
+        )
+        return 1
+    result = poll_tickets(rt)
+    print(canonical_dumps(result.as_dict()))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="aimmune", description="AImmune slice 1 cycle")
+    parser = argparse.ArgumentParser(prog="aimmune", description="AImmune site executor")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
-    cycle = sub.add_parser("cycle", help="run one detect+expiry cycle")
+    cycle = sub.add_parser("cycle", help="run one detect+expiry cycle (drain/poll if plane up)")
     _add_shared(cycle)
     cycle.set_defaults(func=cmd_cycle)
 
@@ -77,6 +105,17 @@ def main(argv: list[str] | None = None) -> int:
     verify = sub.add_parser("verify-chain", help="verify receipt hash chain")
     _add_shared(verify)
     verify.set_defaults(func=cmd_verify)
+
+    drain = sub.add_parser("drain", help="POST pending notify queue to fyber.auditor")
+    _add_shared(drain)
+    drain.set_defaults(func=cmd_drain)
+
+    poll = sub.add_parser(
+        "poll-tickets",
+        help="GET auditor watches and apply/ack resolved intent (no long-poll)",
+    )
+    _add_shared(poll)
+    poll.set_defaults(func=cmd_poll_tickets)
 
     args = parser.parse_args(argv)
     try:

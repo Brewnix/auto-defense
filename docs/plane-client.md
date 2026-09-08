@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Repo:** `Brewnix/auto-defense`  
-**Status:** slice 0 inventory (no executor yet)  
+**Status:** slice 2 — fyber.auditor site client (create / get / ack). Resolve is plane-only.  
 **Transport:** **WireGuard** via the existing Panopticon / Hypermesh-host path. **Not Tailscale.**
 
 AImmune is a **client** of the plane. This repo does not fork the gateway, mint tokens, or implement Host jobs. Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface); doors live in [`FyberLabs/panopticon`](https://github.com/FyberLabs/panopticon).
@@ -40,7 +40,7 @@ The daemon **does not** auto-bind boxes. Unbound or wrong-site devices 404 on si
 
 Runbook: [`docs/slice-0-inventory.md`](slice-0-inventory.md#device-bind-runbook-plane).
 
-## Doors this client will call (later slices)
+## Doors this client calls
 
 All paths are under `PANOPTICON_BASE_URL`. Auth is `HM_SITE_TOKEN` unless noted.
 
@@ -56,6 +56,8 @@ Contract: [fyber.auditor API v0](https://github.com/Brewnix/inference-iface/blob
 | `POST` | `/api/v1/auditor/v0/tickets/{id}/ack` | site | Site wrote apply / observe receipt |
 
 Tickets are intent. Actuation SoT is the site receipt. UI must not claim blocked from resolve alone.
+
+Site implementation: [`aimmune.auditor.client`](../src/aimmune/auditor/client.py) (`POST` create, `GET`, `POST` ack). Drain / poll: [`docs/slice-2-auditor.md`](slice-2-auditor.md). Default timeout **3s**. This repo does **not** implement resolve.
 
 ### Site jobs — [Panopticon #40](https://github.com/FyberLabs/panopticon/pull/40)
 
@@ -98,6 +100,6 @@ Not a `fyber.receipt/v0` write. Copy Host-reported `sell_state`. Do not invent `
 
 **Plane-down.** Do not require these doors when `plane_reachable: false`. Host H4 unix socket is the owner path.
 
-## Out of slice 0
+## Out of slice 2
 
-No auditor client, no preempt / jobs client, no OPNsense loop, no UI. Those are slices 1+.
+No preempt / jobs client, no AImmune UI, no grants / SociACL, no Tailscale, no site-implemented resolve.

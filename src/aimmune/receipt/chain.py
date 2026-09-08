@@ -30,6 +30,9 @@ def build_receipt(
     parent_id: str | None = None,
     receipt_id: str | None = None,
     sources: list[str] | None = None,
+    resolved_by: str | None = None,
+    resolved_at: Any = None,
+    resolution: str | None = None,
 ) -> dict[str, Any]:
     receipt: dict[str, Any] = {
         "schema": "fyber.receipt/v0",
@@ -57,9 +60,13 @@ def build_receipt(
         "execution": execution,
         "human": {
             "required": human_required,
-            "resolved_by": None,
-            "resolved_at": None,
-            "resolution": None,
+            "resolved_by": resolved_by,
+            "resolved_at": (
+                rfc3339(resolved_at)
+                if resolved_at is not None and not isinstance(resolved_at, str)
+                else resolved_at
+            ),
+            "resolution": resolution,
         },
     }
     receipt["integrity"] = {
@@ -99,3 +106,9 @@ class ReceiptChain:
     def append(self, receipt: dict[str, Any]) -> dict[str, Any]:
         append_jsonl(self.path, receipt)
         return receipt
+
+    def get(self, receipt_id: str) -> dict[str, Any] | None:
+        for row in self.load():
+            if row.get("receipt_id") == receipt_id:
+                return row
+        return None

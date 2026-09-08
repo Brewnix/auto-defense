@@ -13,6 +13,10 @@ from aimmune.config import Config, load_config
 from aimmune.exec.opnsense_alias import AliasStore, build_alias_store
 from aimmune.incident.minimal import IncidentStore
 from aimmune.ledger.ttl import TtlLedger
+from aimmune.auditor.client import AuditorClient
+from aimmune.auditor.watch import AuditorWatch
+from aimmune.notify.drain import sync_plane
+from aimmune.notify.held import snapshot_from_proposals
 from aimmune.notify.queue import NotifyQueue, NotifyQueueError
 from aimmune.policy import RateLimiter, decide
 from aimmune.receipt.chain import ReceiptChain, build_receipt
@@ -36,6 +40,7 @@ class CycleResult:
     bundle: dict[str, Any] | None
     envelopes: list[dict[str, Any]] = field(default_factory=list)
     receipts: list[dict[str, Any]] = field(default_factory=list)
+    plane: dict[str, Any] | None = None
 
 
 @dataclass
@@ -47,8 +52,20 @@ class Runtime:
     ledger: TtlLedger
     notify: NotifyQueue
     incidents: IncidentStore
+    watches: AuditorWatch
     rate_limit: RateLimiter
     rules: RulePack
+    auditor: AuditorClient | None = None
+
+
+def build_auditor_client(cfg: Config) -> AuditorClient | None:
+    if not cfg.panopticon_base_url or not cfg.hm_site_token:
+        return None
+    return AuditorClient(
+        cfg.panopticon_base_url,
+        cfg.hm_site_token,
+        timeout_s=cfg.plane_timeout_s,
+    )
 
 
 def build_runtime(
@@ -56,6 +73,7 @@ def build_runtime(
     *,
     clock: Clock | None = None,
     alias: AliasStore | None = None,
+    auditor: AuditorClient | None = None,
 ) -> Runtime:
     cfg = config or load_config()
     cfg.state_dir.mkdir(parents=True, exist_ok=True)
@@ -74,8 +92,10 @@ def build_runtime(
         ledger=TtlLedger(cfg.ttl_ledger_path),
         notify=NotifyQueue(cfg.notify_queue_path),
         incidents=IncidentStore(cfg.incidents_path, cfg.incident_index_path),
+        watches=AuditorWatch(cfg.auditor_watch_path),
         rate_limit=RateLimiter(cfg.rate_limit_path, max_per_hour=cfg.rate_limit_b),
         rules=load_rule_pack(cfg.rules_path, ttl_override=cfg.block_ttl_s),
+        auditor=auditor if auditor is not None else build_auditor_client(cfg),
     )
 
 
@@ -130,7 +150,7 @@ def _try_open_incident(
 ) -> str | None:
     if not ip:
         return None
-    record = rt.incidents.open_security(
+    record = rt.incidents.open_or_join_security(
         site_id=rt.config.site_id,
         opened_at=rt.clock.now(),
         opened_by={"kind": "rule", "id": (envelope.get("actor") or {}).get("id", "")},
@@ -139,10 +159,10 @@ def _try_open_incident(
         ip=ip,
         opening_trace_id=envelope["trace_id"],
         opening_receipt_id=receipt_id,
+        contain_applied=contain_applied,
     )
     if record is None:
         return None
-    record.setdefault("flags", {})["contain_applied"] = contain_applied
     return str(record["incident_id"])
 
 
@@ -228,43 +248,6 @@ def _run_detect_envelope(
                     classes=list((envelope.get("judgment") or {}).get("classes") or []),
                 )
 
-    if result.decision in {"propose", "hold_human"} and result.notify:
-        started = rt.clock.now()
-        queued = True
-        status = "applied"
-        error = None
-        try:
-            rt.notify.enqueue(
-                queued_at=started,
-                site_id=rt.config.site_id,
-                receipt_id=receipt_id,
-                trace_id=envelope["trace_id"],
-                proposal=result.notify,
-                policy_decision=result.decision,
-            )
-        except NotifyQueueError as exc:
-            status = "failed"
-            queued = False
-            error = str(exc)[:500]
-        finished = rt.clock.now()
-        executions.append(
-            _execution(
-                call_id=result.notify["call_id"],
-                tool="notify.operator",
-                status=status,
-                executor=EXECUTOR_NOTIFY,
-                started=started,
-                finished=finished,
-                effect={
-                    "channel": "fyber.auditor",
-                    "ticket_id": None,
-                    "queued": queued,
-                    "receipt_id": receipt_id,
-                },
-                error=error,
-            )
-        )
-
     incident_id = None
     if result.decision in {"execute", "propose", "hold_human"} and primary_ip:
         incident_id = _try_open_incident(
@@ -280,6 +263,48 @@ def _run_detect_envelope(
             for row in executions:
                 if isinstance(row.get("effect"), dict):
                     row["effect"] = {**row["effect"], "incident_id": incident_id}
+
+    if result.decision in {"propose", "hold_human"} and result.notify:
+        started = rt.clock.now()
+        queued = True
+        status = "applied"
+        error = None
+        try:
+            rt.notify.enqueue(
+                queued_at=started,
+                site_id=rt.config.site_id,
+                receipt_id=receipt_id,
+                trace_id=envelope["trace_id"],
+                proposal=result.notify,
+                policy_decision=result.decision,
+                incident_id=incident_id,
+                held=snapshot_from_proposals(result.proposals),
+            )
+        except NotifyQueueError as exc:
+            status = "failed"
+            queued = False
+            error = str(exc)[:500]
+        finished = rt.clock.now()
+        effect: dict[str, Any] = {
+            "channel": "fyber.auditor",
+            "ticket_id": None,
+            "queued": queued,
+            "receipt_id": receipt_id,
+        }
+        if incident_id:
+            effect["incident_id"] = incident_id
+        executions.append(
+            _execution(
+                call_id=result.notify["call_id"],
+                tool="notify.operator",
+                status=status,
+                executor=EXECUTOR_NOTIFY,
+                started=started,
+                finished=finished,
+                effect=effect,
+                error=error,
+            )
+        )
 
     purpose = "contain" if applied_block else "triage"
     receipt = build_receipt(
@@ -457,4 +482,12 @@ def run_cycle(rt: Runtime) -> CycleResult:
         envelopes.append(env)
         receipts.append(rec)
 
-    return CycleResult(bundle=bundle, envelopes=envelopes, receipts=receipts)
+    # Drain + poll after detect/expiry so a slow plane never blocks actuation.
+    plane = None
+    if rt.config.plane_reachable and rt.auditor is not None:
+        try:
+            plane = sync_plane(rt)
+        except Exception:  # noqa: BLE001 — cycle must still return local receipts
+            plane = {"drain": {"errors": ["sync_plane failed"]}, "poll": {}}
+
+    return CycleResult(bundle=bundle, envelopes=envelopes, receipts=receipts, plane=plane)
