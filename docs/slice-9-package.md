@@ -79,6 +79,8 @@ aimmune status --json
 
 Expect `plane_reachable: false`, a growing `receipts.count`, and journal lines from `aimmune.service` only. No public port. No SaaS.
 
+The composed offline vertical (contain **and** hold → verify-chain → local resolve → mint-local → `status --json`) is [`docs/synthetics-v0.md`](synthetics-v0.md). Cottage bring-up checklist: [`docs/host-install-smoke.md`](host-install-smoke.md).
+
 ### Optional UI (sibling install — not in the pip wheel)
 
 ```bash

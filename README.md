@@ -34,6 +34,8 @@ git submodule update --init --recursive
 | Plane doors (`hm_site_`, auditor, site jobs, sell_state, grants) | Client only — [`docs/plane-client.md`](docs/plane-client.md) | [`FyberLabs/panopticon`](https://github.com/FyberLabs/panopticon) |
 | Host actuators | Client / H4 owner path | [`FyberLabs/hypermesh-host`](https://github.com/FyberLabs/hypermesh-host) |
 | Cottage package (systemd + env) | **Here** (slice 9) — [`docs/slice-9-package.md`](docs/slice-9-package.md) · [`deploy/`](deploy/) | Host image bake stays in proxmox-firewall / hypermesh-host |
+| Offline synthetics v0 | **Here** — [`docs/synthetics-v0.md`](docs/synthetics-v0.md) · [`tests/test_synthetic_vertical_offline.py`](tests/test_synthetic_vertical_offline.py) | Live Eve / OPNsense / plane stay out |
+| Host-install smoke (doc) | **Here** — [`docs/host-install-smoke.md`](docs/host-install-smoke.md) · [`docs/usb-layout.md`](docs/usb-layout.md) | USB bake / ISO stay out |
 
 **Not this repo:** Panopticon SaaS gateway fork, Hypermesh-router IR chat UI, `schemas/` amends, market/renter surfaces, Tailscale-as-plane-transport, `.deb`/`.rpm`.
 
@@ -59,6 +61,8 @@ python -m pip install -e '.[dev]'
 AIMMUNE_STATE_DIR=/tmp/aimmune-state AIMMUNE_EXEC_MOCK=1 python -m aimmune cycle
 python -m aimmune status --json
 pytest
+# offline vertical SoT is included; plane-mocked synthetic is default-off:
+# pytest -m plane_mocked
 ```
 
 0. Pin iface + plane inventory freeze (docs) — **landed**  
@@ -99,7 +103,7 @@ python -m aimmune ui                # env checklist
 cd ui && npm install && npm run dev # 127.0.0.1:3000
 ```
 
-`AIMMUNE_UI_HOST=0.0.0.0` is an explicit opt-in only. Local approve/deny: `python -m aimmune owner approve --receipt-id …` (refused when a ticket exists and the plane is up). Slice 8 re-Checks `execute` on `site:{SITE_ID}:ir` at act time; set `AIMMUNE_OWNER_PRINCIPALS` + `AIMMUNE_UI_SMOKE_PRINCIPAL` for loopback MockCheck. Plane grant propose (slice 7) when up; home `mint-local` when the plane is down.
+`AIMMUNE_UI_HOST=0.0.0.0` is an explicit opt-in only. Local approve/deny: `python -m aimmune owner approve --receipt-id …` (refused when a ticket exists and the plane is up). Slice 8 re-Checks `execute` on `site:{SITE_ID}:ir` at act time. Cottage human door: Settings **Connect wallet** (SIWE v0 — [`docs/siwe-v0.md`](docs/siwe-v0.md)); loopback without a wallet uses `AIMMUNE_OWNER_PRINCIPALS` + `AIMMUNE_UI_SMOKE_PRINCIPAL`. Plane grant propose (slice 7) when up; home `mint-local` when the plane is down.
 
 ## Cottage install (slice 9)
 
@@ -114,4 +118,4 @@ aimmune status                    # always exits 0; --json for scripts
 journalctl -u aimmune -f
 ```
 
-Optional UI: `cd ui && npm ci && npm run build`, copy to `/usr/local/lib/aimmune/ui`, set `AIMMUNE_UI_TOKEN`, then `systemctl enable --now aimmune-ui.service` (127.0.0.1). Host wiring checklist (Eve, OPNsense `alias_util`, WireGuard, `#38` token, `Device.site_id`, H4 `owner.sock`): [`docs/slice-9-package.md`](docs/slice-9-package.md).
+Optional UI: `cd ui && npm ci && npm run build`, copy to `/usr/local/lib/aimmune/ui`, set `AIMMUNE_UI_TOKEN`, then `systemctl enable --now aimmune-ui.service` (127.0.0.1). Host wiring checklist (Eve, OPNsense `alias_util`, WireGuard, `#38` token, `Device.site_id`, H4 `owner.sock`): [`docs/slice-9-package.md`](docs/slice-9-package.md). Cottage smoke (doc-only, no ISO): [`docs/host-install-smoke.md`](docs/host-install-smoke.md). Offline vertical synthetic: [`docs/synthetics-v0.md`](docs/synthetics-v0.md).

@@ -136,6 +136,15 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Env: `AIMMUNE_SIWE_DOMAIN` (loopback default), statement binds `site:{SITE_ID}`, optional `AIMMUNE_SIWE_CHAIN_ID`.
 - MockCheck / `requireIrAct` unchanged. Iface pin unchanged. [`docs/siwe-v0.md`](siwe-v0.md).
 
+## Synthetics v0 + host-install smoke (this cut)
+
+- Offline vertical SoT: plane-down + `AIMMUNE_EXEC_MOCK=1` → Eve burst → rules contain (`port_scan`) **and** hold (`ssh_brute`) → verify-chain → local resolve → `grant mint-local` → `status --json`. No live Suricata / OPNsense / WG / Panopticon. Does not require SIWE crypto.
+- Compose existing fixtures (`conftest`, `MockAlias`). Rules-only default. Plane-mocked marker is default-off (`FakeAuditor` / `FakeGrants` only)
+- Folded into existing `pytest` CI. Iface-pin unchanged. UI stays Vitest
+- Host-install smoke is **doc-only** (extends slice 9). USB roles are pointers + tarball notes, not qcow. Brewnix owns gateway/Eve/WG/Host; AImmune ships pip + systemd + env + docs + optional UI
+- Optional UI path on cottage: SIWE Connect (landed) or smoke principal — [`docs/siwe-v0.md`](siwe-v0.md)
+- Runbook: [`docs/synthetics-v0.md`](synthetics-v0.md) · [`docs/host-install-smoke.md`](host-install-smoke.md) · [`docs/usb-layout.md`](usb-layout.md)
+
 ## Slice 5 exit (landed)
 
 - `aimmune.ui.status` — display enums; never blocked from resolve alone

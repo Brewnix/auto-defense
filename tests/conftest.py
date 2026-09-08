@@ -18,6 +18,7 @@ from aimmune.triage.settings import EngineSpec, RailsStub, TriageSettings
 SCAN_SID = "2100498"
 BRUTE_SID = "5721"
 ATTACKER = "203.0.113.50"
+BRUTE_ATTACKER = "203.0.113.60"
 WHITELIST_IP = "198.51.100.10"
 
 
