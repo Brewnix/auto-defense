@@ -13,19 +13,41 @@ EVE_PATH="${AIMMUNE_EVE_PATH:-${STATE_DIR}/eve.jsonl}"
 export AIMMUNE_STATE_DIR="${STATE_DIR}"
 export AIMMUNE_EVE_PATH="${EVE_PATH}"
 export PYTHONPATH="${REPO_ROOT}/src${PYTHONPATH:+:${PYTHONPATH}}"
+PYTHON="${PYTHON:-python3}"
 
 mkdir -p "${STATE_DIR}"
-cat "${AIMMUNE_SYNTHETIC_SCAN_FIXTURE}" "${AIMMUNE_SYNTHETIC_BRUTE_FIXTURE}" > "${EVE_PATH}"
+# Fixture timestamps match FrozenClock tests (2026-09-08T21:00Z).
+# Restamp to now so a live cycle window (default 300s) still sees the burst.
+"${PYTHON}" - "${AIMMUNE_SYNTHETIC_SCAN_FIXTURE}" "${AIMMUNE_SYNTHETIC_BRUTE_FIXTURE}" "${EVE_PATH}" <<'PY'
+import json
+import sys
+from datetime import datetime, timezone
+
+now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000+0000")
+out = sys.argv[3]
+rows: list[str] = []
+for path in sys.argv[1:3]:
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            ev = json.loads(line)
+            ev["timestamp"] = now
+            rows.append(json.dumps(ev, separators=(",", ":")))
+with open(out, "w", encoding="utf-8") as fh:
+    fh.write("\n".join(rows) + "\n")
+PY
 
 echo "offline synthetic"
 echo "  state: ${STATE_DIR}"
 echo "  eve:   ${EVE_PATH}"
 echo "  site:  ${SITE_ID}"
 
-python -m aimmune cycle --state-dir "${STATE_DIR}" --eve "${EVE_PATH}" --site-id "${SITE_ID}"
-python -m aimmune verify-chain --state-dir "${STATE_DIR}" --site-id "${SITE_ID}"
+"${PYTHON}" -m aimmune cycle --state-dir "${STATE_DIR}" --eve "${EVE_PATH}" --site-id "${SITE_ID}"
+"${PYTHON}" -m aimmune verify-chain --state-dir "${STATE_DIR}" --site-id "${SITE_ID}"
 
-python - <<'PY'
+"${PYTHON}" - <<'PY'
 import json
 import os
 import sys
@@ -90,5 +112,5 @@ if rc != 0:
 print(json.dumps({"resolved": propose["receipt_id"], "incident_id": incident_id}))
 PY
 
-python -m aimmune status --json --state-dir "${STATE_DIR}" --site-id "${SITE_ID}"
+"${PYTHON}" -m aimmune status --json --state-dir "${STATE_DIR}" --site-id "${SITE_ID}"
 echo "offline synthetic ok"

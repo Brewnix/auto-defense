@@ -47,7 +47,7 @@ pytest -q
 # offline synthetic is unmarked — included in the default pytest job
 ```
 
-Operator replay (optional; same fixtures):
+Operator replay (optional; same fixtures). The script restamps Eve timestamps to now so the default 300s window still matches:
 
 ```bash
 ./scripts/run-synthetics-offline.sh
