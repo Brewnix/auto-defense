@@ -41,3 +41,24 @@ def rewrite_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
         handle.flush()
         os.fsync(handle.fileno())
     tmp.replace(path)
+
+
+def read_json(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def write_json(path: Path, obj: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    payload = json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    with tmp.open("w", encoding="utf-8") as handle:
+        handle.write(payload + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    tmp.replace(path)

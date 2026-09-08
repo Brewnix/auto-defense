@@ -1,0 +1,41 @@
+[Unit]
+Description=AImmune site daemon (detect → act → receipt loop)
+Documentation=https://github.com/Brewnix/auto-defense/blob/main/docs/slice-9-package.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Cottage default: dedicated `aimmune` system user (home /var/lib/aimmune).
+# Running as root works but is discouraged — the process can read every
+# secret on the box. Comment User=/Group= only if you accept that.
+User=aimmune
+Group=aimmune
+UMask=0077
+EnvironmentFile=-/etc/aimmune/aimmune.env
+Environment=PYTHONUNBUFFERED=1
+# Console script after `pip install aimmune` (or `pip install -e .`).
+# If PATH is incomplete, set ExecStart to a venv, e.g.
+#   ExecStart=/opt/aimmune/venv/bin/aimmune loop
+# or `python -m aimmune loop` with WorkingDirectory pointing at the
+# checkout and PYTHONPATH=src.
+ExecStart=/usr/local/bin/aimmune loop
+WorkingDirectory=/var/lib/aimmune
+Restart=on-failure
+RestartSec=5
+Nice=10
+TimeoutStopSec=30
+MemoryMax=512M
+TasksMax=128
+LimitNOFILE=2048
+NoNewPrivileges=true
+PrivateTmp=true
+# Optional hardening: add ReadOnlyPaths= for Suricata EVE / Host state,
+# and ReadWritePaths=/var/lib/aimmune, then set ProtectSystem=strict.
+# Default stays off so AIMMUNE_EVE_PATH and H4 owner.sock keep working.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aimmune
+
+[Install]
+WantedBy=multi-user.target

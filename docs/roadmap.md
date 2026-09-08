@@ -24,9 +24,9 @@ Then package as one site daemon.
 | Slice | When | What |
 |-------|------|------|
 | **6** | **done** | Model triage (`actor.kind: model`, local-only cottage v0). LLM judges; policy executes. [`docs/slice-6-model-triage.md`](slice-6-model-triage.md). |
-| **7** | **this PR** | Privilege grant site client (`#50`). Plane mint / site cache / home offline mint. [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md). |
+| **7** | **done** | Privilege grant site client (`#50`). Plane mint / site cache / home offline mint. [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md). |
 | **8** | later | SociACL IR UX (`Check` / `delegate` for human resolve / mint). Dual auth with `hm_site_`. |
-| **9** | later | Package: one site daemon, host image wiring. |
+| **9** | **this PR** | Package: one site daemon + host wiring runbook (no image bake). [`docs/slice-9-package.md`](slice-9-package.md). |
 
 Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 3. Slice 8 stays off the critical path until grants exist. Slice 6 is judge-only; slice 7 mints / caches grants.
 
@@ -101,6 +101,17 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Empty `packs/emergency-v0` + tiny prompt_route registry
 - Tests (httpx mock) + iface-pin + UI CI unchanged
 - Runbook: [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md)
+- Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
+
+## Slice 9 exit (this PR)
+
+- Two systemd units: `aimmune.service` (`aimmune loop`) required; `aimmune-ui.service` optional (`next start` on 127.0.0.1). Next is **not** embedded in Python
+- In-repo artifact: pip `aimmune` + `deploy/systemd/*.service` + `deploy/aimmune.env.example` + `deploy/install.sh`. No `.deb`/`.rpm`
+- Host wiring is a runbook + env contract (Eve, alias_util, WireGuard, `#38` token, `Device.site_id`, H4 sock). No image bake, no vendored Host/OPNsense
+- Cycle-end already covers auditor / grant / incident / site_defense hook. No second preempt daemon
+- `aimmune status` / `--json` — journald companion; always exits 0; `$STATE_DIR/last_cycle.json`
+- UI remains a sibling `npm ci && npm run build`. Iface-pin CI unchanged
+- Runbook: [`docs/slice-9-package.md`](slice-9-package.md)
 - Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
 
 ## Slice 5 exit (landed)

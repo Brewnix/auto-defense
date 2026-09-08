@@ -38,7 +38,7 @@ from aimmune.rules.engine import (
 from aimmune.rules.expiry import emit_expiry_envelope
 from aimmune.schema import validate_bundle, validate_envelope, validate_receipt
 from aimmune.sensors.eve_to_bundle import build_feature_bundle, load_whitelist
-from aimmune.store import rewrite_jsonl
+from aimmune.store import rewrite_jsonl, write_json
 
 EXECUTOR_FW = "opnsense-api@site"
 EXECUTOR_NOTIFY = "auditor-api@site"
@@ -643,7 +643,7 @@ def run_cycle(rt: Runtime) -> CycleResult:
     except Exception:  # noqa: BLE001 — overlay never gates the cycle
         sweep = {"closed": [], "error": "sweep failed"}
 
-    return CycleResult(
+    result = CycleResult(
         bundle=bundle,
         envelopes=envelopes,
         receipts=receipts,
@@ -652,3 +652,28 @@ def run_cycle(rt: Runtime) -> CycleResult:
         grants=grant_sync,
         policy_inputs=policy_inputs,
     )
+    _persist_last_cycle(rt, result)
+    return result
+
+
+def _persist_last_cycle(rt: Runtime, result: CycleResult) -> None:
+    """Best-effort cycle summary for ``aimmune status``. Never fail the cycle."""
+    try:
+        write_json(
+            rt.config.last_cycle_path,
+            {
+                "finished_at": rfc3339(rt.clock.now()),
+                "receipt_count": len(result.receipts),
+                "receipt_ids": [row.get("receipt_id") for row in result.receipts],
+                "decisions": [
+                    (row.get("policy") or {}).get("decision") for row in result.receipts
+                ],
+                "purposes": [row.get("purpose") for row in result.receipts],
+                "plane_reachable": rt.config.plane_reachable,
+                "plane": result.plane,
+                "grants": result.grants,
+                "sweep": result.sweep,
+            },
+        )
+    except Exception:  # noqa: BLE001 — observability must not gate contain
+        return
