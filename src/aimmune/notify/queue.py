@@ -48,8 +48,11 @@ class NotifyQueue:
         append_jsonl(self.path, item)
         return item
 
+    def rows(self) -> list[dict[str, Any]]:
+        return read_jsonl(self.path)
+
     def pending(self) -> list[dict[str, Any]]:
-        return [row for row in read_jsonl(self.path) if not row.get("drained")]
+        return [row for row in self.rows() if not row.get("drained")]
 
     def mark_drained(self, receipt_id: str, ticket_id: str | None = None) -> None:
         """Slice 2 hook — do not call a plane client here."""

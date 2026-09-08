@@ -1,9 +1,15 @@
-"""CLI: cycle, loop, drain, poll-tickets, preempt. Resolve stays plane-only."""
+"""CLI: cycle, loop, drain, poll-tickets, preempt, owner, ui-snapshot.
+
+Plane resolve stays plane-only. Site-local owner approve/deny is slice 5.
+"""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -12,8 +18,10 @@ from aimmune.canonical import canonical_dumps
 from aimmune.config import load_config
 from aimmune.cycle import build_runtime, run_cycle
 from aimmune.notify.drain import drain_queue, poll_tickets
+from aimmune.owner.local import WaitingOnPlaneError, local_resolve
 from aimmune.preempt.runner import cli_preempt, run_preempt_queue
 from aimmune.receipt.chain import verify_chain
+from aimmune.ui.snapshot import build_snapshot
 
 
 def _add_shared(parser: argparse.ArgumentParser) -> None:
@@ -118,6 +126,85 @@ def cmd_poll_tickets(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_owner(args: argparse.Namespace) -> int:
+    rt = _runtime_from_args(args)
+    resolution = "approved" if args.owner_cmd == "approve" else "denied"
+    try:
+        child = local_resolve(
+            rt,
+            args.receipt_id,
+            resolution,
+            note=args.note,
+        )
+    except WaitingOnPlaneError as exc:
+        print(f"ERROR: waiting on plane: {exc}", file=sys.stderr)
+        return 2
+    print(
+        canonical_dumps(
+            {
+                "receipt_id": child.get("receipt_id"),
+                "parent_id": child.get("parent_id"),
+                "resolution": resolution,
+                "decision": (child.get("policy") or {}).get("decision"),
+                "purpose": child.get("purpose"),
+                "resolved_by": (child.get("human") or {}).get("resolved_by"),
+            }
+        )
+    )
+    return 0
+
+
+def cmd_ui_snapshot(args: argparse.Namespace) -> int:
+    rt = _runtime_from_args(args)
+    snap = build_snapshot(rt, limit=args.limit)
+    print(canonical_dumps(snap))
+    return 0
+
+
+def cmd_ui(args: argparse.Namespace) -> int:
+    """Print env checklist; optionally spawn Next.js in ui/."""
+    cfg = load_config(state_dir=args.state_dir, site_id=args.site_id)
+    token_set = bool(cfg.ui_token)
+    checklist = {
+        "AIMMUNE_UI_TOKEN": "set" if token_set else "MISSING (required to serve)",
+        "AIMMUNE_UI_HOST": cfg.ui_host,
+        "AIMMUNE_UI_PORT": cfg.ui_port,
+        "AIMMUNE_STATE_DIR": str(cfg.state_dir),
+        "SITE_ID": cfg.site_id,
+        "AIMMUNE_PLANE_REACHABLE": cfg.plane_reachable,
+        "listen": f"{cfg.ui_host}:{cfg.ui_port}",
+        "bind_note": (
+            "loopback default; set AIMMUNE_UI_HOST=0.0.0.0 only as an explicit opt-in"
+            if cfg.ui_host in {"127.0.0.1", "localhost", "::1"}
+            else "non-loopback bind is an explicit opt-in"
+        ),
+    }
+    print(canonical_dumps(checklist))
+    if not args.start:
+        print(
+            "run: cd ui && npm install && npm run dev\n"
+            f"  (binds {cfg.ui_host}:{cfg.ui_port}; export AIMMUNE_UI_TOKEN first)",
+            file=sys.stderr,
+        )
+        return 0 if token_set else 1
+    if not token_set:
+        print("ERROR: AIMMUNE_UI_TOKEN is required to start the UI", file=sys.stderr)
+        return 1
+    ui_dir = Path(args.ui_dir) if args.ui_dir else Path.cwd() / "ui"
+    if not (ui_dir / "package.json").is_file():
+        print(f"ERROR: Next.js app not found at {ui_dir}", file=sys.stderr)
+        return 1
+    npm = shutil.which("npm")
+    if not npm:
+        print("ERROR: npm not found", file=sys.stderr)
+        return 1
+    env = os.environ.copy()
+    env.setdefault("AIMMUNE_UI_HOST", cfg.ui_host)
+    env.setdefault("AIMMUNE_UI_PORT", str(cfg.ui_port))
+    cmd = [npm, "run", "dev", "--", "-H", cfg.ui_host, "-p", str(cfg.ui_port)]
+    return subprocess.call(cmd, cwd=ui_dir, env=env)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="aimmune", description="AImmune site executor")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -189,6 +276,42 @@ def main(argv: list[str] | None = None) -> int:
     )
     _add_shared(run_p)
     run_p.set_defaults(func=cmd_preempt, preempt_cmd="run")
+
+    owner = sub.add_parser(
+        "owner",
+        help="site-local approve/deny of a held companion (plane-down or no ticket)",
+    )
+    owner_sub = owner.add_subparsers(dest="owner_cmd", required=True)
+    for action, help_text in (
+        ("approve", "locally approve a held companion and apply"),
+        ("deny", "locally deny a held companion (observe only)"),
+    ):
+        p = owner_sub.add_parser(action, help=help_text)
+        _add_shared(p)
+        p.add_argument("--receipt-id", required=True)
+        p.add_argument(
+            "--note",
+            default=None,
+            help="optional short redacted annotate note (max 500)",
+        )
+        p.set_defaults(func=cmd_owner, owner_cmd=action)
+
+    snap = sub.add_parser(
+        "ui-snapshot",
+        help="print a redacted JSON snapshot of site state for the UI",
+    )
+    _add_shared(snap)
+    snap.add_argument("--limit", type=int, default=50)
+    snap.set_defaults(func=cmd_ui_snapshot)
+
+    ui = sub.add_parser(
+        "ui",
+        help="print UI env checklist; --start spawns Next.js (cd ui && npm run dev)",
+    )
+    _add_shared(ui)
+    ui.add_argument("--start", action="store_true", help="spawn Next.js after the checklist")
+    ui.add_argument("--ui-dir", type=Path, default=None)
+    ui.set_defaults(func=cmd_ui)
 
     args = parser.parse_args(argv)
     try:

@@ -278,6 +278,11 @@ def apply_resolution(
     else:
         annotate_text = f"auditor {resolution}; observe only"
 
+    owner_note = ticket.get("owner_note")
+    if isinstance(owner_note, str) and owner_note.strip():
+        extra = owner_note.strip()[:500]
+        annotate_text = f"{annotate_text}; {extra}" if annotate_text else extra
+
     if annotate_text:
         annotate = {
             "call_id": str(uuid4()),
