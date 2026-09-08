@@ -10,8 +10,8 @@ Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inferen
 
 | Slice | Status | What |
 |-------|--------|------|
-| **0** | **done** | Pin iface + plane inventory freeze (this PR). Submodule, CI, docs. No executor. |
-| **1** | next | Zero-LLM OPNsense detect → block → `fyber.receipt/v0`. Rules actor only. |
+| **0** | **done** | Pin iface + plane inventory freeze. Submodule, CI, docs. No executor. |
+| **1** | **this PR** | Zero-LLM OPNsense detect → block → `fyber.receipt/v0` + TTL expiry unblock + local notify queue stub + minimal security incident side-record. Rules actor only. [`docs/slice-1-zero-llm.md`](slice-1-zero-llm.md). |
 | **2** | after 1 | `notify.operator` → fyber.auditor client (`#39` tickets; intent ≠ actuation). |
 | **3** | **parallel after 1** | Incident side index (`fyber.incident/v0` overlay). Never gates contain. |
 | **4** | after 2 | Preempt client + H3 drain: `/site/jobs`, `/site/devices`, H4 offline. `lease_id` required. Enqueue ≠ apply. |
@@ -36,6 +36,15 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - CI: [`.github/workflows/iface-pin.yml`](../.github/workflows/iface-pin.yml) — submodule checkout, fail if pin missing, validate `schemas/*.v0.json` + examples
 - Inventory: [`docs/slice-0-inventory.md`](slice-0-inventory.md)
 - Plane client: [`docs/plane-client.md`](plane-client.md)
+
+## Slice 1 exit (this PR)
+
+- Python package `aimmune` — EVE → bundle → `brewnix-rules/v0.1` → policy → `alias_util` add/delete → receipt hash chain
+- Expiry: TTL ledger + `brewnix-rules/expiry` (`execution.status: expired`)
+- `propose` / `hold_human` → durable `notify_queue.jsonl` (no plane POST)
+- Minimal local `fyber.incident/v0` side-record; contain is not gated on that write
+- Tests + pytest CI job; iface-pin CI unchanged
+- Runbook: [`docs/slice-1-zero-llm.md`](slice-1-zero-llm.md)
 
 ## Not this repo
 
