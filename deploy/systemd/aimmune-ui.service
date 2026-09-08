@@ -13,9 +13,9 @@ Group=aimmune
 UMask=0077
 EnvironmentFile=-/etc/aimmune/aimmune.env
 Environment=PYTHONUNBUFFERED=1
-# Loopback is the default. AIMMUNE_UI_HOST=0.0.0.0 is an explicit opt-in
-# only — prefer SSH tunnel over a public bind.
-Environment=AIMMUNE_UI_HOST=127.0.0.1
+# Loopback default lives in aimmune.env.example and the ExecStart
+# ${AIMMUNE_UI_HOST:-127.0.0.1} fallback. Do not set Environment= for
+# that key — it would override the env file and block 0.0.0.0 opt-in.
 WorkingDirectory=/usr/local/lib/aimmune/ui
 # Fail closed: do not serve without a bearer token (slice 5 / 8 stay valid).
 ExecStartPre=/bin/sh -c 'test -n "${AIMMUNE_UI_TOKEN-}"'

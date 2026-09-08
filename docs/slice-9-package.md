@@ -92,7 +92,7 @@ sudo systemctl enable --now aimmune-ui.service
 # 127.0.0.1:3000 — SSH tunnel if you are off-box
 ```
 
-`AIMMUNE_UI_HOST=0.0.0.0` is documented only as an explicit opt-in. Next stays a **separate** process (`npm run start` / `npx next start -H 127.0.0.1`). Local approve/deny and the UI token remain valid without SociACL.
+`AIMMUNE_UI_HOST=0.0.0.0` is an explicit opt-in via the env file; the unit does not hardcode the bind (ExecStart falls back to 127.0.0.1 only when unset). Local approve/deny and the UI token remain valid without SociACL.
 
 The UI spawns `python -m aimmune` (`AIMMUNE_PYTHON`, optional `AIMMUNE_REPO_ROOT`). After `pip install`, any `python3` that sees the package works.
 
