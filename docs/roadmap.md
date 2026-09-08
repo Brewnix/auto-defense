@@ -14,8 +14,8 @@ Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inferen
 | **1** | **done** | Zero-LLM OPNsense detect → block → `fyber.receipt/v0` + TTL expiry unblock + local notify queue stub + minimal security incident side-record. Rules actor only. [`docs/slice-1-zero-llm.md`](slice-1-zero-llm.md). |
 | **2** | **done** | `notify.operator` → fyber.auditor client (`#39` tickets; drain / poll / apply / ack; intent ≠ actuation). [`docs/slice-2-auditor.md`](slice-2-auditor.md). |
 | **3** | **parallel after 1** | Incident side index (`fyber.incident/v0` overlay). Never gates contain. |
-| **4** | **this PR** | Preempt client + H3 drain: `/site/jobs`, `/site/devices`, H4 offline, thin site_defense hook. `lease_id` required. Enqueue ≠ apply. [`docs/slice-4-preempt.md`](slice-4-preempt.md). |
-| **5** | after 4 | AImmune UI v0 (site SoT; tickets are intent; no `/v1/ir/chat`). |
+| **4** | **done** | Preempt client + H3 drain: `/site/jobs`, `/site/devices`, H4 offline, thin site_defense hook. `lease_id` required. Enqueue ≠ apply. [`docs/slice-4-preempt.md`](slice-4-preempt.md). |
+| **5** | **this PR** | AImmune UI v0 (site SoT; tickets are intent; no `/v1/ir/chat`). [`docs/slice-5-ui.md`](slice-5-ui.md). |
 
 Then package as one site daemon.
 
@@ -57,7 +57,7 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Tests (httpx mock) + iface-pin CI unchanged
 - Runbook: [`docs/slice-2-auditor.md`](slice-2-auditor.md)
 
-## Slice 4 exit (this PR)
+## Slice 4 exit (landed)
 
 - `aimmune.plane.jobs` — `#40` POST/GET site jobs (`hm_site_`); `lease_id` required on `lease_stop`
 - `aimmune.plane.posture` — `#41` GET `sell_state` + `AIMMUNE_SELL_STATE_STALE_S` (default 300s)
@@ -68,6 +68,15 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - CLI `aimmune preempt` (`sell-pause` / `lease-stop` / `drain` / `run`)
 - Tests (mock `#40`/`#41`/H4) + iface-pin CI unchanged
 - Runbook: [`docs/slice-4-preempt.md`](slice-4-preempt.md)
+
+## Slice 5 exit (this PR)
+
+- `aimmune.ui.status` — display enums; never blocked from resolve alone
+- `aimmune.owner.local` — local approve/deny via the same apply path as poll
+- CLI `aimmune owner approve|deny`, `ui-snapshot`, `ui`
+- Next.js + shadcn console in `ui/` (loopback + `AIMMUNE_UI_TOKEN`)
+- Tests: pytest copy/apply + UI lint/typecheck/vitest; iface-pin CI unchanged
+- Runbook: [`docs/slice-5-ui.md`](slice-5-ui.md)
 
 ## Not this repo
 

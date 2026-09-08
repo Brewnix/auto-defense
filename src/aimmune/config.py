@@ -20,6 +20,8 @@ DEFAULT_LEASE_STOP_RATE = 10
 DEFAULT_JOB_POLL_TIMEOUT_S = 30.0
 DEFAULT_JOB_POLL_INTERVAL_S = 0.2
 DEFAULT_PREEMPT_MODE = "drain"
+DEFAULT_UI_HOST = "127.0.0.1"
+DEFAULT_UI_PORT = 3000
 
 
 def _truthy(name: str, default: bool = False) -> bool:
@@ -123,6 +125,9 @@ class Config:
     host_state_dir: Path | None = None
     owner_sock: Path | None = None
     owner_token_path: Path | None = None
+    ui_token: str | None = None
+    ui_host: str = DEFAULT_UI_HOST
+    ui_port: int = DEFAULT_UI_PORT
 
     @property
     def lease_bindings(self) -> tuple[tuple[str, str], ...]:
@@ -265,4 +270,8 @@ def load_config(
         or _optional_path("HYPERMESH_STATE_DIR"),
         owner_sock=_optional_path("AIMMUNE_OWNER_SOCK"),
         owner_token_path=_optional_path("AIMMUNE_OWNER_TOKEN"),
+        ui_token=os.environ.get("AIMMUNE_UI_TOKEN") or None,
+        ui_host=(os.environ.get("AIMMUNE_UI_HOST") or DEFAULT_UI_HOST).strip()
+        or DEFAULT_UI_HOST,
+        ui_port=int(os.environ.get("AIMMUNE_UI_PORT", str(DEFAULT_UI_PORT))),
     )

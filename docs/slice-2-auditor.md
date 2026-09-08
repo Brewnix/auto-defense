@@ -94,7 +94,7 @@ pytest
 
 ## Out of scope
 
-Phase B `post_action_audit` · privilege grants / SociACL · AImmune UI · preempt / H3 · Tailscale · `schemas/` edits · site-implemented resolve.
+Phase B `post_action_audit` · privilege grants / SociACL · preempt / H3 · Tailscale · `schemas/` edits · site-implemented resolve. AImmune UI is slice 5.
 
 ## Intent vs actuation
 

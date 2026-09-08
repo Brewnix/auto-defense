@@ -126,4 +126,4 @@ python -m aimmune cycle
 
 ## Out of scope
 
-Privilege grants / `tool_allowlist_add` (slice 7) · AImmune UI (slice 5) · model triage (slice 6) · SociACL · Tailscale · `schemas/` edits · `preempt_mode=hard` · Host mega-job · implying `hypermesh.*` from `rails_profile`.
+Privilege grants / `tool_allowlist_add` (slice 7) · model triage (slice 6) · SociACL · Tailscale · `schemas/` edits · `preempt_mode=hard` · Host mega-job · implying `hypermesh.*` from `rails_profile`. AImmune UI is slice 5.
