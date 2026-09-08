@@ -19,7 +19,6 @@ from aimmune.triage.decide import (
 )
 from aimmune.triage.engines.base import Engine, EngineResult
 from aimmune.triage.engines.mock import MockEngine
-from aimmune.triage.engines.ollama import OllamaEngine
 from aimmune.triage.engines.pair import PairEngine
 from aimmune.triage.eval_log import append_eval
 from aimmune.triage.settings import EngineSpec, TriageSettings
@@ -33,6 +32,8 @@ def build_engines(specs: tuple[EngineSpec, ...] | list[EngineSpec]) -> list[Engi
                 MockEngine(engine_id=spec.id, scenario=spec.scenario or "propose")
             )
         elif spec.kind == "ollama":
+            from aimmune.triage.engines.ollama import OllamaEngine
+
             engines.append(
                 OllamaEngine(
                     engine_id=spec.id,
