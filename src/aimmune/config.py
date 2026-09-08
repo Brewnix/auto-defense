@@ -13,6 +13,7 @@ DEFAULT_ALIAS = "ai_autoblock"
 DEFAULT_RATE_LIMIT_B = 30
 DEFAULT_BLOCK_TTL_S = 86400
 DEFAULT_SITE_ID = "net-tn-cottage"
+DEFAULT_PLANE_TIMEOUT_S = 3.0
 
 
 def _truthy(name: str, default: bool = False) -> bool:
@@ -69,6 +70,9 @@ class Config:
     opnsense_key: str | None = None
     opnsense_secret: str | None = None
     opnsense_verify: bool = True
+    panopticon_base_url: str | None = None
+    hm_site_token: str | None = None
+    plane_timeout_s: float = DEFAULT_PLANE_TIMEOUT_S
 
     @property
     def receipts_path(self) -> Path:
@@ -93,6 +97,10 @@ class Config:
     @property
     def rate_limit_path(self) -> Path:
         return self.state_dir / "rate_limit.jsonl"
+
+    @property
+    def auditor_watch_path(self) -> Path:
+        return self.state_dir / "auditor_watch.jsonl"
 
 
 def load_config(
@@ -136,4 +144,9 @@ def load_config(
         opnsense_secret=os.environ.get("AIMMUNE_OPNSENSE_SECRET")
         or os.environ.get("OPNSENSE_SECRET"),
         opnsense_verify=_truthy("AIMMUNE_OPNSENSE_VERIFY", default=True),
+        panopticon_base_url=os.environ.get("PANOPTICON_BASE_URL") or None,
+        hm_site_token=os.environ.get("HM_SITE_TOKEN") or None,
+        plane_timeout_s=float(
+            os.environ.get("AIMMUNE_PLANE_TIMEOUT_S", str(DEFAULT_PLANE_TIMEOUT_S))
+        ),
     )

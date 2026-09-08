@@ -11,8 +11,8 @@ Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inferen
 | Slice | Status | What |
 |-------|--------|------|
 | **0** | **done** | Pin iface + plane inventory freeze. Submodule, CI, docs. No executor. |
-| **1** | **this PR** | Zero-LLM OPNsense detect → block → `fyber.receipt/v0` + TTL expiry unblock + local notify queue stub + minimal security incident side-record. Rules actor only. [`docs/slice-1-zero-llm.md`](slice-1-zero-llm.md). |
-| **2** | after 1 | `notify.operator` → fyber.auditor client (`#39` tickets; intent ≠ actuation). |
+| **1** | **done** | Zero-LLM OPNsense detect → block → `fyber.receipt/v0` + TTL expiry unblock + local notify queue stub + minimal security incident side-record. Rules actor only. [`docs/slice-1-zero-llm.md`](slice-1-zero-llm.md). |
+| **2** | **this PR** | `notify.operator` → fyber.auditor client (`#39` tickets; drain / poll / apply / ack; intent ≠ actuation). [`docs/slice-2-auditor.md`](slice-2-auditor.md). |
 | **3** | **parallel after 1** | Incident side index (`fyber.incident/v0` overlay). Never gates contain. |
 | **4** | after 2 | Preempt client + H3 drain: `/site/jobs`, `/site/devices`, H4 offline. `lease_id` required. Enqueue ≠ apply. |
 | **5** | after 4 | AImmune UI v0 (site SoT; tickets are intent; no `/v1/ir/chat`). |
@@ -37,7 +37,7 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Inventory: [`docs/slice-0-inventory.md`](slice-0-inventory.md)
 - Plane client: [`docs/plane-client.md`](plane-client.md)
 
-## Slice 1 exit (this PR)
+## Slice 1 exit (landed)
 
 - Python package `aimmune` — EVE → bundle → `brewnix-rules/v0.1` → policy → `alias_util` add/delete → receipt hash chain
 - Expiry: TTL ledger + `brewnix-rules/expiry` (`execution.status: expired`)
@@ -45,6 +45,17 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Minimal local `fyber.incident/v0` side-record; contain is not gated on that write
 - Tests + pytest CI job; iface-pin CI unchanged
 - Runbook: [`docs/slice-1-zero-llm.md`](slice-1-zero-llm.md)
+
+## Slice 2 exit (this PR)
+
+- Held companion snapshot on enqueue; old rows fall back to the held receipt
+- `aimmune.auditor.client` — create / get / ack with `HM_SITE_TOKEN` (no resolve)
+- Drain queue → `POST /api/v1/auditor/v0/tickets`; `auditor_watch.jsonl`
+- Poll watches every cycle (no long-poll); apply approved / denied / timed_out / amended; child receipt; ack
+- Cycle-end sync only when `plane_reachable` (3s default timeout); CLI `drain` / `poll-tickets`
+- Phase A only; incident open/join on propose/hold; never wait on plane
+- Tests (httpx mock) + iface-pin CI unchanged
+- Runbook: [`docs/slice-2-auditor.md`](slice-2-auditor.md)
 
 ## Not this repo
 
