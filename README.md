@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Engineering repo:** [`Brewnix/auto-defense`](https://github.com/Brewnix/auto-defense) (this repo)  
-**Status:** **slice 3** — incident overlay on top of slices 1–2 / 4–5. See [`docs/slice-3-incident.md`](docs/slice-3-incident.md).  
+**Status:** **slice 6** — model triage (judge only) on top of slices 1–5. See [`docs/slice-6-model-triage.md`](docs/slice-6-model-triage.md).  
 **License:** [MIT](LICENSE)  
 **Contracts:** pin [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208) in [`vendor/inference-iface`](vendor/inference-iface). Do **not** fork or weaken those locks here.  
 **CI:** [iface pin](.github/workflows/iface-pin.yml) — checkout with submodules; fail if pin missing; validate `schemas/*.v0.json` + examples.
@@ -49,7 +49,7 @@ Full table: [`docs/slice-0-inventory.md`](docs/slice-0-inventory.md). Roadmap: [
 
 ## Recommended vertical
 
-`0 → 1 → 2 → 4 → 5` then package. **Slices 0–5 in this tree** (3 parallel after 1).
+`0 → 1 → 2 → 4 → 5` then package. **Slices 0–6 in this tree** (3 parallel after 1).
 
 ```bash
 python -m pip install -e '.[dev]'
@@ -63,7 +63,8 @@ pytest
 3. Incident side index — [`docs/slice-3-incident.md`](docs/slice-3-incident.md) — **this tree**  
 4. Preempt client + H3 (`/site/jobs`, `/site/devices`, H4 offline, site_defense hook) — [`docs/slice-4-preempt.md`](docs/slice-4-preempt.md) — **landed**  
 5. AImmune UI v0 — [`docs/slice-5-ui.md`](docs/slice-5-ui.md) — **landed**  
-6–8. Model triage, privilege grant, SociACL IR UX  
+6. Model triage — [`docs/slice-6-model-triage.md`](docs/slice-6-model-triage.md) — **this tree**  
+7–8. Privilege grant, SociACL IR UX  
 9. Package as one site daemon
 
 ## Plane doors (cite, don’t reimplement)

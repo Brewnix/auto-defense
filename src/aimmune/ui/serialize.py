@@ -22,6 +22,9 @@ STRIP_KEYS = frozenset(
         "http",
         "payload_printable",
         "payload_hex",
+        "eval_log",
+        "system_prompt",
+        "user_prompt",
     }
 )
 

@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Repo:** `Brewnix/auto-defense`  
-**Vertical (locked):** `0 → 1 → 2 → 4 → 5` then package.
+**Vertical (locked):** `0 → 1 → 2 → 4 → 5` then package. Slice **6** (model triage) rides the same pipeline after the vertical.
 
 Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface). This repo pins that SHA and implements the site executor + UI. Do not fork or weaken schemas.
 
@@ -23,12 +23,12 @@ Then package as one site daemon.
 
 | Slice | When | What |
 |-------|------|------|
-| **6** | later | Model triage (`actor.kind: model`, local-only cottage v0). LLM judges; policy executes. |
+| **6** | **this PR** | Model triage (`actor.kind: model`, local-only cottage v0). LLM judges; policy executes. [`docs/slice-6-model-triage.md`](slice-6-model-triage.md). |
 | **7** | later | Privilege grant plane store. **After** UI (lock #5). |
 | **8** | later | SociACL IR UX (`Check` / `delegate` for human resolve / mint). Dual auth with `hm_site_`. |
 | **9** | later | Package: one site daemon, host image wiring. |
 
-Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 3. Slices 6–8 stay off the critical path until the vertical loop + UI exist.
+Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 3. Slices 7–8 stay off the critical path until the vertical loop + UI exist. Slice 6 is judge-only and does not mint grants.
 
 ## Slice 0 exit (landed)
 
@@ -78,6 +78,17 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Grant stub (`grant_ids` / `grant_active` / `require_grant_incident_id`) — no mint
 - Tests map to binding acceptance 1–8; iface-pin CI unchanged
 - Runbook: [`docs/slice-3-incident.md`](slice-3-incident.md)
+
+## Slice 6 exit (this PR)
+
+- `aimmune.triage` — call gate, single winner, MockEngine + optional Ollama + PAIR stub
+- Policy forces model companion tools to propose under strict / no stub grant; elevated execute is stub-only (`ir_elevated` / `break_glass` + allowlist + θ)
+- Cycle wires triage after rules emit / before policy; auto-execute never calls an engine
+- `$STATE_DIR/triage_eval.jsonl` redacted pointer (no prompts)
+- UI `/receipts` shows `actor.kind` / `actor.id`
+- Tests map to model-triage-v0 acceptance 1–8 + eval replay; iface-pin + UI CI unchanged
+- Runbook: [`docs/slice-6-model-triage.md`](slice-6-model-triage.md)
+- Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
 
 ## Slice 5 exit (landed)
 

@@ -22,6 +22,8 @@ from aimmune.notify.queue import NotifyQueue, NotifyQueueError
 from aimmune.plane.jobs import SiteJobsClient
 from aimmune.plane.posture import SitePostureClient
 from aimmune.policy import RateLimiter, decide
+from aimmune.triage.decide import allow_model_execute, execute_allowlist
+from aimmune.triage.runner import apply_triage, build_engines
 from aimmune.preempt.queue import PreemptQueue
 from aimmune.receipt.chain import ReceiptChain, build_receipt
 from aimmune.rules.engine import (
@@ -46,6 +48,7 @@ class CycleResult:
     receipts: list[dict[str, Any]] = field(default_factory=list)
     plane: dict[str, Any] | None = None
     sweep: dict[str, Any] | None = None
+    policy_inputs: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -66,6 +69,8 @@ class Runtime:
     jobs: SiteJobsClient | None = None
     posture: SitePostureClient | None = None
     owner: OwnerClient | None = None
+    triage_engines: list[Any] = field(default_factory=list)
+    last_policy_envelopes: list[dict[str, Any]] = field(default_factory=list)
 
 
 def build_auditor_client(cfg: Config) -> AuditorClient | None:
@@ -128,6 +133,7 @@ def build_runtime(
     jobs: SiteJobsClient | None = None,
     posture: SitePostureClient | None = None,
     owner: OwnerClient | None = None,
+    triage_engines: list[Any] | None = None,
 ) -> Runtime:
     cfg = config or load_config()
     cfg.state_dir.mkdir(parents=True, exist_ok=True)
@@ -158,6 +164,11 @@ def build_runtime(
         jobs=jobs if jobs is not None else build_jobs_client(cfg, clock=clk),
         posture=posture if posture is not None else build_posture_client(cfg, clock=clk),
         owner=owner if owner is not None else build_owner_client(cfg),
+        triage_engines=(
+            list(triage_engines)
+            if triage_engines is not None
+            else build_engines(cfg.triage.engines)
+        ),
     )
 
 
@@ -212,10 +223,20 @@ def _try_open_incident(
 ) -> str | None:
     if not ip:
         return None
+    actor = envelope.get("actor") or {}
+    opened_kind = str(actor.get("kind") or "rule")
+    if opened_kind == "model":
+        opened_kind = "automation"
+    elif opened_kind not in {"rule", "automation", "human"}:
+        opened_kind = "automation"
+    opened_id = (
+        "brewnix-policy/v0" if opened_kind == "automation" and actor.get("kind") == "model"
+        else str(actor.get("id") or "")
+    )
     record = rt.incidents.open_or_join_security(
         site_id=rt.config.site_id,
         opened_at=rt.clock.now(),
-        opened_by={"kind": "rule", "id": (envelope.get("actor") or {}).get("id", "")},
+        opened_by={"kind": opened_kind, "id": opened_id},
         severity=severity,
         summary_redacted=summary,
         ip=ip,
@@ -239,6 +260,8 @@ def _run_detect_envelope(
     prior = rt.ledger.prior_blocks(now, list(members))
     whitelist = load_whitelist(rt.config.whitelist_path)
     receipt_id = str(uuid4())
+    rails = rt.config.triage.rails
+    model_exec = allow_model_execute(rails, now)
     result = decide(
         envelope,
         pin=rt.config.iface_pin,
@@ -250,6 +273,10 @@ def _run_detect_envelope(
         auto_rule_ids=rt.rules.auto_execute_rule_ids,
         receipt_id=receipt_id,
         site_id=rt.config.site_id,
+        allow_model_execute=model_exec,
+        confidence_theta=rt.config.triage.confidence_theta,
+        model_tool_allowlist=execute_allowlist(rails, now),
+        bundle={k: v for k, v in bundle.items() if k != "_digest"},
     )
     envelope = dict(envelope)
     envelope["proposals"] = result.proposals
@@ -533,9 +560,25 @@ def run_cycle(rt: Runtime) -> CycleResult:
                 confidence=rt.rules.confidence,
             )
         ]
+    policy_inputs: list[dict[str, Any]] = []
+    rt.last_policy_envelopes = []
     for env in detect_envs:
-        rec = _run_detect_envelope(rt, env, bundle_with_digest)
-        envelopes.append(env)
+        winner = apply_triage(
+            rules_envelope=env,
+            bundle=bundle_with_digest,
+            settings=rt.config.triage,
+            auto_rule_ids=rt.rules.auto_execute_rule_ids,
+            pin=rt.config.iface_pin,
+            site_id=rt.config.site_id,
+            now=now,
+            engines=rt.triage_engines,
+            eval_path=rt.config.triage_eval_path,
+        )
+        policy_env = winner.envelope
+        policy_inputs.append(policy_env)
+        rt.last_policy_envelopes.append(policy_env)
+        rec = _run_detect_envelope(rt, policy_env, bundle_with_digest)
+        envelopes.append(policy_env)
         receipts.append(rec)
 
     # Expiry after detect so a still-hot window dedupes against the live alias
@@ -579,4 +622,5 @@ def run_cycle(rt: Runtime) -> CycleResult:
         receipts=receipts,
         plane=plane,
         sweep=sweep,
+        policy_inputs=policy_inputs,
     )

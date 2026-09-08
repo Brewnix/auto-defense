@@ -54,7 +54,17 @@ def test_synthetic_burst_one_applied_second_observe(tmp_state) -> None:
 def test_no_model_required(tmp_state) -> None:
     import sys
 
-    banned = [name for name in sys.modules if "llama" in name or "openai" in name]
+    # Zero-LLM path must not import a live model SDK. The optional HTTP
+    # adapter module name contains "ollama" — that is not llama.cpp / OpenAI.
+    banned = [
+        name
+        for name in sys.modules
+        if name == "openai"
+        or name.startswith("openai.")
+        or name == "llama"
+        or name.startswith("llama.")
+        or name.startswith("llama_cpp")
+    ]
     assert banned == []
     write_eve(tmp_state.config.eve_path, port_scan_burst(ATTACKER, tmp_state.clock.now()))
     result = run_cycle(tmp_state)

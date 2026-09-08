@@ -259,6 +259,28 @@ def test_serializer_strips_prompt_and_payload() -> None:
     assert "eve_raw" not in blob
     assert clean["receipt_id"] == dirty["receipt_id"]
     assert "ip" in (clean["proposals"][0]["args"] or {})
+    assert clean["actor"]["kind"] == "rule"
+
+
+def test_serializer_shows_model_actor_without_eval_prompt() -> None:
+    dirty = _receipt(
+        extra={
+            "actor": {
+                "kind": "model",
+                "id": "mock-engine@sha256:" + ("a" * 64),
+                "purpose": "triage",
+            },
+            "prompt": "You are a judge. SYSTEM leak",
+            "eval_log": {"prompt": "never", "messages": ["x"]},
+        }
+    )
+    clean = serialize_receipt(dirty)
+    assert clean["actor"]["kind"] == "model"
+    assert clean["actor"]["id"].startswith("mock-engine@")
+    blob = str(clean)
+    assert "SYSTEM leak" not in blob
+    assert "You are a judge" not in blob
+    assert "eval_log" not in blob
 
 
 def test_strip_unsafe_nested() -> None:
