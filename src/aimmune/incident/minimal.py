@@ -166,6 +166,12 @@ class IncidentStore:
     def attach_receipt(self, incident_id: str, receipt_id: str, now=None) -> None:
         self._attach_id(incident_id, "receipt_ids", receipt_id, now=now)
 
+    def find_open_security_by_ip(self, site_id: str, ip: str) -> dict[str, Any] | None:
+        for row in self.find_open(site_id, kind="security"):
+            if _dominant_ip(row) == ip:
+                return row
+        return None
+
     def attach_grant(
         self,
         incident_id: str,
@@ -174,7 +180,7 @@ class IncidentStore:
         active_until=None,
         now=None,
     ) -> None:
-        """Test/dev stub until slice 7 mints real grants."""
+        """Bind a grant id + ``active_until`` and flip ``flags.grant_active``."""
         if self.fail_next_write:
             self.fail_next_write = False
             return
@@ -207,7 +213,7 @@ class IncidentStore:
             return
 
     def set_grant_active(self, incident_id: str, active: bool) -> dict[str, Any] | None:
-        """Test helper: flip ``flags.grant_active`` (slice 7 will derive this)."""
+        """Flip ``flags.grant_active`` (derived from the grant cache)."""
         if self.fail_next_write:
             self.fail_next_write = False
             return None
@@ -491,8 +497,8 @@ class IncidentStore:
 def require_grant_incident_id(grant: dict[str, Any] | None) -> str:
     """Reject fyber.privilege_grant/v0 missing / empty / null incident_id.
 
-    Slice 7 will mint. Empty-ask one-shot approve stays on the auditor
-    ticket and does not use this helper.
+    Slice 7 mint / propose uses this helper. Empty-ask one-shot approve
+    stays on the auditor ticket and does not use this helper.
     """
     raw = None if grant is None else grant.get("incident_id")
     if raw is None or (isinstance(raw, str) and not raw.strip()):

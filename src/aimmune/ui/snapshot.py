@@ -7,6 +7,7 @@ from typing import Any
 from aimmune.notify.held import resolve_held
 from aimmune.store import read_jsonl
 from aimmune.ui.serialize import (
+    serialize_grant,
     serialize_held,
     serialize_incident,
     serialize_preempt_queue_row,
@@ -165,4 +166,10 @@ def build_snapshot(rt: Any, *, limit: int = 50) -> dict[str, Any]:
                 for row in reversed(hyper)
             ],
         },
+        "grants": [
+            serialize_grant(row)
+            for row in reversed(
+                (rt.grants.list() if getattr(rt, "grants", None) is not None else [])[-limit:]
+            )
+        ],
     }

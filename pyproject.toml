@@ -27,7 +27,7 @@ aimmune = "aimmune.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-aimmune = ["rules/*.yaml"]
+aimmune = ["rules/*.yaml", "grants/packs/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

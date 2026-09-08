@@ -199,6 +199,10 @@ class Config:
         return self.state_dir / "triage_eval.jsonl"
 
     @property
+    def grants_path(self) -> Path:
+        return self.state_dir / "grants.jsonl"
+
+    @property
     def rails_stub(self) -> RailsStub:
         return self.triage.rails
 

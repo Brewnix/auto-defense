@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Engineering repo:** [`Brewnix/auto-defense`](https://github.com/Brewnix/auto-defense) (this repo)  
-**Status:** **slice 6** — model triage (judge only) on top of slices 1–5. See [`docs/slice-6-model-triage.md`](docs/slice-6-model-triage.md).  
+**Status:** **slice 7** — privilege grant site client on top of slices 1–6. See [`docs/slice-7-privilege-grant.md`](docs/slice-7-privilege-grant.md).  
 **License:** [MIT](LICENSE)  
 **Contracts:** pin [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208) in [`vendor/inference-iface`](vendor/inference-iface). Do **not** fork or weaken those locks here.  
 **CI:** [iface pin](.github/workflows/iface-pin.yml) — checkout with submodules; fail if pin missing; validate `schemas/*.v0.json` + examples.
@@ -29,7 +29,8 @@ git submodule update --init --recursive
 | `notify.operator` → fyber.auditor client | **Here** (slice 2) | Plane: Panopticon `#39` — intent ≠ actuation |
 | Hypermesh preempt client + H3 drain | **Here** (slice 4) — [`docs/slice-4-preempt.md`](docs/slice-4-preempt.md) | Host H1–H4; plane `#40` / `#41` |
 | AImmune UI (digests / tickets / posture) | **Here** (slice 5) — [`docs/slice-5-ui.md`](docs/slice-5-ui.md) · [`ui/`](ui/) | — |
-| Plane doors (`hm_site_`, auditor, site jobs, sell_state) | Client only — [`docs/plane-client.md`](docs/plane-client.md) | [`FyberLabs/panopticon`](https://github.com/FyberLabs/panopticon) |
+| Privilege grant site client | **Here** (slice 7) — [`docs/slice-7-privilege-grant.md`](docs/slice-7-privilege-grant.md) | Plane: Panopticon `#50` — resolve is plane-only |
+| Plane doors (`hm_site_`, auditor, site jobs, sell_state, grants) | Client only — [`docs/plane-client.md`](docs/plane-client.md) | [`FyberLabs/panopticon`](https://github.com/FyberLabs/panopticon) |
 | Host actuators | Client / H4 owner path | [`FyberLabs/hypermesh-host`](https://github.com/FyberLabs/hypermesh-host) |
 
 **Not this repo:** Panopticon SaaS gateway fork, Hypermesh-router IR chat UI, `schemas/` amends, market/renter surfaces, Tailscale-as-plane-transport.
@@ -49,7 +50,7 @@ Full table: [`docs/slice-0-inventory.md`](docs/slice-0-inventory.md). Roadmap: [
 
 ## Recommended vertical
 
-`0 → 1 → 2 → 4 → 5` then package. **Slices 0–6 in this tree** (3 parallel after 1).
+`0 → 1 → 2 → 4 → 5` then package. **Slices 0–7 in this tree** (3 parallel after 1).
 
 ```bash
 python -m pip install -e '.[dev]'
@@ -63,8 +64,9 @@ pytest
 3. Incident side index — [`docs/slice-3-incident.md`](docs/slice-3-incident.md) — **this tree**  
 4. Preempt client + H3 (`/site/jobs`, `/site/devices`, H4 offline, site_defense hook) — [`docs/slice-4-preempt.md`](docs/slice-4-preempt.md) — **landed**  
 5. AImmune UI v0 — [`docs/slice-5-ui.md`](docs/slice-5-ui.md) — **landed**  
-6. Model triage — [`docs/slice-6-model-triage.md`](docs/slice-6-model-triage.md) — **this tree**  
-7–8. Privilege grant, SociACL IR UX  
+6. Model triage — [`docs/slice-6-model-triage.md`](docs/slice-6-model-triage.md) — **landed**  
+7. Privilege grant — [`docs/slice-7-privilege-grant.md`](docs/slice-7-privilege-grant.md) — **this tree**  
+8. SociACL IR UX  
 9. Package as one site daemon
 
 ## Plane doors (cite, don’t reimplement)
@@ -75,6 +77,7 @@ pytest
 | fyber.auditor | `#39` — `/api/v1/auditor/v0/tickets` |
 | Site jobs | `#40` — [`brewnix-executor-bridge-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/brewnix-executor-bridge-v0.md) |
 | Live `sell_state` | `#41` — [`heartbeat-sell-state-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/heartbeat-sell-state-v0.md) |
+| Privilege grants | `#50` — `/api/v1/grants/v0/grants` (propose / get / list; resolve is plane-only) |
 
 How AImmune will call them over WireGuard: [`docs/plane-client.md`](docs/plane-client.md) (`PANOPTICON_BASE_URL`, `HM_SITE_TOKEN`, `SITE_ID`).
 

@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Repo:** `Brewnix/auto-defense`  
-**Status:** slice 4 — fyber.auditor site client plus Hypermesh `#40` / `#41` jobs + `sell_state`. Resolve is plane-only.  
+**Status:** slice 7 — fyber.auditor `#39` + Hypermesh `#40` / `#41` + privilege grants `#50`. Resolve (tickets and grants) is plane-only.  
 **Transport:** **WireGuard** via the existing Panopticon / Hypermesh-host path. **Not Tailscale.**
 
 AImmune is a **client** of the plane. This repo does not fork the gateway, mint tokens, or implement Host jobs. Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface); doors live in [`FyberLabs/panopticon`](https://github.com/FyberLabs/panopticon).
@@ -104,6 +104,24 @@ Site implementation: [`aimmune.plane.jobs`](../src/aimmune/plane/jobs.py) · [`a
 
 Stale heartbeat: if `last_heartbeat_at` is older than `AIMMUNE_SELL_STATE_STALE_S` (default 300s), treat posture as unknown. Automated stop-only holds.
 
-## Out of slice 4
+### Privilege grants — [Panopticon #50](https://github.com/FyberLabs/panopticon/pull/50)
 
-No AImmune UI, no grants / SociACL, no Tailscale, no site-implemented resolve, no `preempt_mode=hard`, no `schemas/` edits.
+Contract: [privilege-grant-v0](https://github.com/Brewnix/inference-iface/blob/3621849bbf7c368b1d709356c465883144300208/docs/privilege-grant-v0.md) · plane doc: [`privilege-grant-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/privilege-grant-v0.md)
+
+Same env and timeout as auditor (`PANOPTICON_BASE_URL`, `HM_SITE_TOKEN`, `SITE_ID`, ~3s).
+
+| Method | Path | Who | Role |
+|--------|------|-----|------|
+| `POST` | `/api/v1/grants/v0/grants` | site | Propose (idempotent `(site_id,incident_id,trace_id)` or `Idempotency-Key`) |
+| `GET` | `/api/v1/grants/v0/grants/{id}` | site or plane operator | Read one (incl. terminal) |
+| `GET` | `/api/v1/grants/v0/grants?status=proposed\|approved` + optional `incident_id` | site | Narrow list |
+| `POST` | `/api/v1/grants/v0/grants/{id}/resolve` | plane operator only | Mint / deny. **Site token must not call this.** |
+| `POST` | `/api/v1/grants/v0/grants/{id}/revoke` | plane operator only | Revoke. **Site token must not call this.** |
+
+Plane mint is SoT when reachable. The site cache (`$STATE_DIR/grants.jsonl`) is SoT for `active_until` if the plane drops. Home offline mint is site-local only — no home→plane sync door. Site implementation: [`aimmune.grants.client`](../src/aimmune/grants/client.py). Runbook: [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md). This repo does **not** implement resolve or revoke.
+
+Ticket `approved` is not an elevation. Grant `approved` is not a firewall apply.
+
+## Out of slice 7
+
+SociACL, Phase B cooldown, home→plane grant sync, Tailscale, site-implemented resolve/revoke, `preempt_mode=hard`, `schemas/` edits, iface pin bump.

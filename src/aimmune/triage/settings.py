@@ -48,11 +48,12 @@ class EngineSpec:
 
 @dataclass(frozen=True)
 class RailsStub:
-    """Test/cottage rails stub until slice 7 mints real privilege grants.
+    """Deprecated test-only rails override. Privilege grants are SoT.
 
-    Setting ``profile`` to ``ir_elevated`` / ``break_glass`` without
-    ``grant_active`` does **not** elevate. After ``active_until`` the
-    stub is treated as expired (strict). This is not a grant store.
+    ``AIMMUNE_RAILS_GRANT_*`` may still inject an elevation for pytest
+    fixtures. Setting ``profile`` to ``ir_elevated`` / ``break_glass``
+    without ``grant_active`` does **not** elevate. After ``active_until``
+    the stub is treated as expired (strict).
     """
 
     profile: str = "strict"
@@ -237,14 +238,24 @@ def parse_triage_settings(
     else:
         raise ConfigError("tool_allowlist must be a list")
 
+    grant_active = _truthy(
+        str(yaml_block["grant_active"])
+        if "grant_active" in yaml_block
+        else environ.get("AIMMUNE_RAILS_GRANT_ACTIVE"),
+        default=False,
+    )
+    if grant_active:
+        import warnings
+
+        warnings.warn(
+            "AIMMUNE_RAILS_GRANT_* is a deprecated test-only override; "
+            "privilege grants are the source of truth",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     rails = RailsStub(
         profile=profile,
-        grant_active=_truthy(
-            str(yaml_block["grant_active"])
-            if "grant_active" in yaml_block
-            else environ.get("AIMMUNE_RAILS_GRANT_ACTIVE"),
-            default=False,
-        ),
+        grant_active=grant_active,
         active_until=grant_until,
         tool_allowlist=allowlist,
     )

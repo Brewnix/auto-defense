@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Repo:** `Brewnix/auto-defense`  
-**Vertical (locked):** `0 → 1 → 2 → 4 → 5` then package. Slice **6** (model triage) rides the same pipeline after the vertical.
+**Vertical (locked):** `0 → 1 → 2 → 4 → 5` then package. Slices **6** (model triage) and **7** (privilege grants) ride the same pipeline after the vertical.
 
 Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface). This repo pins that SHA and implements the site executor + UI. Do not fork or weaken schemas.
 
@@ -23,12 +23,12 @@ Then package as one site daemon.
 
 | Slice | When | What |
 |-------|------|------|
-| **6** | **this PR** | Model triage (`actor.kind: model`, local-only cottage v0). LLM judges; policy executes. [`docs/slice-6-model-triage.md`](slice-6-model-triage.md). |
-| **7** | later | Privilege grant plane store. **After** UI (lock #5). |
+| **6** | **done** | Model triage (`actor.kind: model`, local-only cottage v0). LLM judges; policy executes. [`docs/slice-6-model-triage.md`](slice-6-model-triage.md). |
+| **7** | **this PR** | Privilege grant site client (`#50`). Plane mint / site cache / home offline mint. [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md). |
 | **8** | later | SociACL IR UX (`Check` / `delegate` for human resolve / mint). Dual auth with `hm_site_`. |
 | **9** | later | Package: one site daemon, host image wiring. |
 
-Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 3. Slices 7–8 stay off the critical path until the vertical loop + UI exist. Slice 6 is judge-only and does not mint grants.
+Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 3. Slice 8 stays off the critical path until grants exist. Slice 6 is judge-only; slice 7 mints / caches grants.
 
 ## Slice 0 exit (landed)
 
@@ -79,15 +79,28 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Tests map to binding acceptance 1–8; iface-pin CI unchanged
 - Runbook: [`docs/slice-3-incident.md`](slice-3-incident.md)
 
-## Slice 6 exit (this PR)
+## Slice 6 exit (landed)
 
 - `aimmune.triage` — call gate, single winner, MockEngine + optional Ollama + PAIR stub
-- Policy forces model companion tools to propose under strict / no stub grant; elevated execute is stub-only (`ir_elevated` / `break_glass` + allowlist + θ)
+- Policy forces model companion tools to propose under strict / no grant; elevated execute is grant-gated (`ir_elevated` / `break_glass` + allowlist + θ)
 - Cycle wires triage after rules emit / before policy; auto-execute never calls an engine
 - `$STATE_DIR/triage_eval.jsonl` redacted pointer (no prompts)
 - UI `/receipts` shows `actor.kind` / `actor.id`
 - Tests map to model-triage-v0 acceptance 1–8 + eval replay; iface-pin + UI CI unchanged
 - Runbook: [`docs/slice-6-model-triage.md`](slice-6-model-triage.md)
+- Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
+
+## Slice 7 exit (this PR)
+
+- `aimmune.grants` — #50 propose / get / list (no resolve/revoke); local ladder validate; `$STATE_DIR/grants.jsonl`
+- Plane mint SoT when up; cache `active_until` if plane drops; home `mint-local` is site-local only
+- Cycle-end grant poll after auditor sync; never blocks contain
+- Active grant drives `allow_model_execute` / catalog / tier / budget; rails env is a deprecated test override
+- CLI `aimmune grant propose|get|list|poll|mint-local|status`
+- UI `/grants` + redacted snapshot (no prompts); ticket approve ≠ elevation
+- Empty `packs/emergency-v0` + tiny prompt_route registry
+- Tests (httpx mock) + iface-pin + UI CI unchanged
+- Runbook: [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md)
 - Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
 
 ## Slice 5 exit (landed)

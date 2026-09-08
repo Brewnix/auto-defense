@@ -87,8 +87,9 @@ export default async function OverviewPage() {
       <Alert>
         <AlertTitle>Read-mostly console</AlertTitle>
         <AlertDescription>
-          Writes are local approve/deny of a held companion only. No IR chat, no
-          rule-pack editor, no SID UI, no grant mint.
+          Writes are local approve/deny of a held companion, plus optional grant
+          propose / plane-down mint-local on /grants. No IR chat, no rule-pack
+          editor, no SID UI. Ticket approve is not elevation.
         </AlertDescription>
       </Alert>
     </AppShell>
