@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Engineering repo:** [`Brewnix/auto-defense`](https://github.com/Brewnix/auto-defense) (this repo)  
-**Status:** naming + repo home locked 2026-09-08 (Chris) — implementation vertical not started  
+**Status:** pressure-test package **LOCKED 2026-09-08** (Chris) — implementation vertical not started  
 **License:** [MIT](LICENSE)  
 **Contracts:** pin [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface). Do **not** fork or weaken those locks here.
 
@@ -19,17 +19,26 @@ Site-local sense → decide → act → receipt. Policy + typed actuators execut
 | OPNsense / Suricata actuators | **Here** | Host image: [`Brewnix/proxmox-firewall`](https://github.com/Brewnix/proxmox-firewall) |
 | `notify.operator` → fyber.auditor client | **Here** | Plane: Panopticon `#39` |
 | Hypermesh preempt client + H3 drain | **Here** | Host H1–H4; plane `#40` / `#41` |
-| AImmune defense UI (digests / tickets / posture) | **Here** | — |
+| AImmune UI (digests / tickets / posture) | **Here** (site SoT) | — |
 | Plane doors (`hm_site_`, auditor, site jobs, sell_state) | Client only | [`FyberLabs/panopticon`](https://github.com/FyberLabs/panopticon) |
 | Host actuators | Client / H4 owner path | [`FyberLabs/hypermesh-host`](https://github.com/FyberLabs/hypermesh-host) |
 
 **Not this repo:** Panopticon SaaS gateway fork, Hypermesh-router IR chat UI, `schemas/` amends, market/renter surfaces, Tailscale-as-plane-transport.
 
-## Plane reachability (locked)
+## Locked axioms (pressure-test 2026-09-08)
 
-WireGuard via the **existing Panopticon / host path**. Not a Tailscale product dependency; no public Tailscale deployment for AImmune↔plane.
+- Plane reach: **WireGuard** (Panopticon/host) — not Tailscale  
+- `Device.site_id`: operator bind once  
+- UI SoT: site-local; tickets are intent  
+- Vertical: UI (5) before privilege grants (7)  
+- Model cottage v0: **local-only**  
+- Auth: `hm_site_` machine + SociACL human (dual)  
+- No `/v1/ir/chat` in AImmune UI  
+- CI pins iface SHA **here**
 
-## Recommended vertical (pending greenlight)
+Full table: [`docs/slice-0-inventory.md`](docs/slice-0-inventory.md).
+
+## Recommended vertical
 
 `0 → 1 → 2 → 4 → 5` then package.
 
@@ -50,5 +59,3 @@ WireGuard via the **existing Panopticon / host path**. Not a Tailscale product d
 | fyber.auditor | `#39` — `/api/v1/auditor/v0/tickets` |
 | Site jobs | `#40` — [`brewnix-executor-bridge-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/brewnix-executor-bridge-v0.md) |
 | Live `sell_state` | `#41` — [`heartbeat-sell-state-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/heartbeat-sell-state-v0.md) |
-
-See [`docs/slice-0-inventory.md`](docs/slice-0-inventory.md).
