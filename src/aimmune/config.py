@@ -14,6 +14,12 @@ DEFAULT_RATE_LIMIT_B = 30
 DEFAULT_BLOCK_TTL_S = 86400
 DEFAULT_SITE_ID = "net-tn-cottage"
 DEFAULT_PLANE_TIMEOUT_S = 3.0
+DEFAULT_RAILS_PROFILE = "strict"
+DEFAULT_SELL_STATE_STALE_S = 300
+DEFAULT_LEASE_STOP_RATE = 10
+DEFAULT_JOB_POLL_TIMEOUT_S = 30.0
+DEFAULT_JOB_POLL_INTERVAL_S = 0.2
+DEFAULT_PREEMPT_MODE = "drain"
 
 
 def _truthy(name: str, default: bool = False) -> bool:
@@ -28,6 +34,36 @@ def _optional_path(name: str) -> Path | None:
     if not raw:
         return None
     return Path(raw)
+
+
+def _csv_list(name: str) -> tuple[str, ...]:
+    raw = os.environ.get(name)
+    if not raw:
+        return ()
+    return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
+def parse_lease_bindings(
+    raw: tuple[str, ...],
+    device_ids: tuple[str, ...],
+) -> tuple[tuple[str, str], ...]:
+    """Map configured lease ids to device_id. Never pick-active / omit.
+
+    ``device_id:lease_id`` binds explicitly. Bare ``lease_id`` is allowed
+    only when exactly one device_id is configured.
+    """
+    bindings: list[tuple[str, str]] = []
+    for item in raw:
+        if ":" in item:
+            device_id, lease_id = item.split(":", 1)
+            device_id, lease_id = device_id.strip(), lease_id.strip()
+            if device_id and lease_id:
+                bindings.append((device_id, lease_id))
+            continue
+        if len(device_ids) != 1:
+            continue
+        bindings.append((device_ids[0], item))
+    return tuple(bindings)
 
 
 def find_iface_pin(explicit: Path | None = None) -> Path:
@@ -73,6 +109,54 @@ class Config:
     panopticon_base_url: str | None = None
     hm_site_token: str | None = None
     plane_timeout_s: float = DEFAULT_PLANE_TIMEOUT_S
+    rails_profile: str = DEFAULT_RAILS_PROFILE
+    allow_sell_pause_execute: bool = True
+    allow_stop_while_selling: bool = False
+    site_defense_preempt: bool = False
+    hypermesh_device_ids: tuple[str, ...] = ()
+    hypermesh_lease_ids: tuple[str, ...] = ()
+    sell_state_stale_s: int = DEFAULT_SELL_STATE_STALE_S
+    lease_stop_rate: int = DEFAULT_LEASE_STOP_RATE
+    job_poll_timeout_s: float = DEFAULT_JOB_POLL_TIMEOUT_S
+    job_poll_interval_s: float = DEFAULT_JOB_POLL_INTERVAL_S
+    preempt_mode: str = DEFAULT_PREEMPT_MODE
+    host_state_dir: Path | None = None
+    owner_sock: Path | None = None
+    owner_token_path: Path | None = None
+
+    @property
+    def lease_bindings(self) -> tuple[tuple[str, str], ...]:
+        return parse_lease_bindings(self.hypermesh_lease_ids, self.hypermesh_device_ids)
+
+    @property
+    def lease_stop_rate_path(self) -> Path:
+        return self.state_dir / "lease_stop_rate.jsonl"
+
+    @property
+    def preempt_queue_path(self) -> Path:
+        return self.state_dir / "preempt_queue.jsonl"
+
+    @property
+    def resolved_owner_sock(self) -> Path | None:
+        if self.owner_sock is not None:
+            return self.owner_sock
+        if self.host_state_dir is not None:
+            return self.host_state_dir / "owner.sock"
+        return None
+
+    @property
+    def resolved_owner_token_path(self) -> Path | None:
+        if self.owner_token_path is not None:
+            return self.owner_token_path
+        if self.host_state_dir is not None:
+            return self.host_state_dir / "owner.token"
+        return None
+
+    @property
+    def owner_effects_path(self) -> Path | None:
+        if self.host_state_dir is not None:
+            return self.host_state_dir / "owner-effects.jsonl"
+        return None
 
     @property
     def receipts_path(self) -> Path:
@@ -149,4 +233,36 @@ def load_config(
         plane_timeout_s=float(
             os.environ.get("AIMMUNE_PLANE_TIMEOUT_S", str(DEFAULT_PLANE_TIMEOUT_S))
         ),
+        rails_profile=(
+            os.environ.get("AIMMUNE_RAILS_PROFILE", DEFAULT_RAILS_PROFILE).strip()
+            or DEFAULT_RAILS_PROFILE
+        ),
+        allow_sell_pause_execute=_truthy(
+            "AIMMUNE_ALLOW_SELL_PAUSE_EXECUTE", default=True
+        ),
+        allow_stop_while_selling=_truthy(
+            "AIMMUNE_ALLOW_STOP_WHILE_SELLING", default=False
+        ),
+        site_defense_preempt=_truthy("AIMMUNE_SITE_DEFENSE_PREEMPT", default=False),
+        hypermesh_device_ids=_csv_list("AIMMUNE_HYPERMESH_DEVICE_IDS"),
+        hypermesh_lease_ids=_csv_list("AIMMUNE_HYPERMESH_LEASE_IDS"),
+        sell_state_stale_s=int(
+            os.environ.get("AIMMUNE_SELL_STATE_STALE_S", str(DEFAULT_SELL_STATE_STALE_S))
+        ),
+        lease_stop_rate=int(
+            os.environ.get("AIMMUNE_LEASE_STOP_RATE", str(DEFAULT_LEASE_STOP_RATE))
+        ),
+        job_poll_timeout_s=float(
+            os.environ.get("AIMMUNE_JOB_POLL_TIMEOUT_S", str(DEFAULT_JOB_POLL_TIMEOUT_S))
+        ),
+        job_poll_interval_s=float(
+            os.environ.get(
+                "AIMMUNE_JOB_POLL_INTERVAL_S", str(DEFAULT_JOB_POLL_INTERVAL_S)
+            )
+        ),
+        preempt_mode=DEFAULT_PREEMPT_MODE,
+        host_state_dir=_optional_path("AIMMUNE_HOST_STATE_DIR")
+        or _optional_path("HYPERMESH_STATE_DIR"),
+        owner_sock=_optional_path("AIMMUNE_OWNER_SOCK"),
+        owner_token_path=_optional_path("AIMMUNE_OWNER_TOKEN"),
     )

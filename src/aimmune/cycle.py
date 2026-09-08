@@ -15,10 +15,14 @@ from aimmune.incident.minimal import IncidentStore
 from aimmune.ledger.ttl import TtlLedger
 from aimmune.auditor.client import AuditorClient
 from aimmune.auditor.watch import AuditorWatch
+from aimmune.host.owner import OwnerClient
 from aimmune.notify.drain import sync_plane
 from aimmune.notify.held import snapshot_from_proposals
 from aimmune.notify.queue import NotifyQueue, NotifyQueueError
+from aimmune.plane.jobs import SiteJobsClient
+from aimmune.plane.posture import SitePostureClient
 from aimmune.policy import RateLimiter, decide
+from aimmune.preempt.queue import PreemptQueue
 from aimmune.receipt.chain import ReceiptChain, build_receipt
 from aimmune.rules.engine import (
     RulePack,
@@ -54,8 +58,13 @@ class Runtime:
     incidents: IncidentStore
     watches: AuditorWatch
     rate_limit: RateLimiter
+    lease_stop_rate: RateLimiter
     rules: RulePack
+    preempt_queue: PreemptQueue
     auditor: AuditorClient | None = None
+    jobs: SiteJobsClient | None = None
+    posture: SitePostureClient | None = None
+    owner: OwnerClient | None = None
 
 
 def build_auditor_client(cfg: Config) -> AuditorClient | None:
@@ -68,12 +77,56 @@ def build_auditor_client(cfg: Config) -> AuditorClient | None:
     )
 
 
+def build_jobs_client(cfg: Config, *, clock: Clock | None = None) -> SiteJobsClient | None:
+    if not cfg.panopticon_base_url or not cfg.hm_site_token:
+        return None
+    return SiteJobsClient(
+        cfg.panopticon_base_url,
+        cfg.hm_site_token,
+        timeout_s=cfg.plane_timeout_s,
+        poll_timeout_s=cfg.job_poll_timeout_s,
+        poll_interval_s=cfg.job_poll_interval_s,
+        clock=clock,
+    )
+
+
+def build_posture_client(cfg: Config, *, clock: Clock | None = None) -> SitePostureClient | None:
+    if not cfg.panopticon_base_url or not cfg.hm_site_token:
+        return None
+    return SitePostureClient(
+        cfg.panopticon_base_url,
+        cfg.hm_site_token,
+        timeout_s=cfg.plane_timeout_s,
+        stale_s=cfg.sell_state_stale_s,
+        clock=clock,
+    )
+
+
+def build_owner_client(cfg: Config) -> OwnerClient | None:
+    sock = cfg.resolved_owner_sock
+    token_path = cfg.resolved_owner_token_path
+    if sock is None or token_path is None or not token_path.is_file():
+        return None
+    try:
+        return OwnerClient(
+            sock,
+            token_path.read_text(encoding="utf-8").strip(),
+            timeout_s=cfg.plane_timeout_s,
+            effects_path=cfg.owner_effects_path,
+        )
+    except Exception:  # noqa: BLE001 — plane-down path is optional
+        return None
+
+
 def build_runtime(
     config: Config | None = None,
     *,
     clock: Clock | None = None,
     alias: AliasStore | None = None,
     auditor: AuditorClient | None = None,
+    jobs: SiteJobsClient | None = None,
+    posture: SitePostureClient | None = None,
+    owner: OwnerClient | None = None,
 ) -> Runtime:
     cfg = config or load_config()
     cfg.state_dir.mkdir(parents=True, exist_ok=True)
@@ -84,9 +137,10 @@ def build_runtime(
         secret=cfg.opnsense_secret,
         verify=cfg.opnsense_verify,
     )
+    clk = clock or Clock()
     return Runtime(
         config=cfg,
-        clock=clock or Clock(),
+        clock=clk,
         alias=store,
         chain=ReceiptChain(cfg.receipts_path),
         ledger=TtlLedger(cfg.ttl_ledger_path),
@@ -94,8 +148,15 @@ def build_runtime(
         incidents=IncidentStore(cfg.incidents_path, cfg.incident_index_path),
         watches=AuditorWatch(cfg.auditor_watch_path),
         rate_limit=RateLimiter(cfg.rate_limit_path, max_per_hour=cfg.rate_limit_b),
+        lease_stop_rate=RateLimiter(
+            cfg.lease_stop_rate_path, max_per_hour=cfg.lease_stop_rate
+        ),
         rules=load_rule_pack(cfg.rules_path, ttl_override=cfg.block_ttl_s),
+        preempt_queue=PreemptQueue(cfg.preempt_queue_path),
         auditor=auditor if auditor is not None else build_auditor_client(cfg),
+        jobs=jobs if jobs is not None else build_jobs_client(cfg, clock=clk),
+        posture=posture if posture is not None else build_posture_client(cfg, clock=clk),
+        owner=owner if owner is not None else build_owner_client(cfg),
     )
 
 
@@ -482,7 +543,18 @@ def run_cycle(rt: Runtime) -> CycleResult:
         envelopes.append(env)
         receipts.append(rec)
 
+    # Thin site_defense hook: propose only (no Host job RTT on the IDS cycle).
+    if rt.config.site_defense_preempt:
+        from aimmune.preempt.runner import emit_site_defense_hook
+
+        try:
+            hook_receipts = emit_site_defense_hook(rt, receipts)
+        except Exception:  # noqa: BLE001 — contain receipts already written
+            hook_receipts = []
+        receipts.extend(hook_receipts)
+
     # Drain + poll after detect/expiry so a slow plane never blocks actuation.
+    # Hypermesh Host jobs are not awaited here (preempt runner is separate).
     plane = None
     if rt.config.plane_reachable and rt.auditor is not None:
         try:

@@ -33,6 +33,7 @@ def build_receipt(
     resolved_by: str | None = None,
     resolved_at: Any = None,
     resolution: str | None = None,
+    door: str = "site_defense",
 ) -> dict[str, Any]:
     receipt: dict[str, Any] = {
         "schema": "fyber.receipt/v0",
@@ -41,7 +42,7 @@ def build_receipt(
         "site_id": site_id,
         "trace_id": trace_id,
         "ts": rfc3339(ts) if not isinstance(ts, str) else ts,
-        "door": "site_defense",
+        "door": door,
         "purpose": purpose,
         "posture": posture,
         "input": {
