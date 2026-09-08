@@ -1,5 +1,5 @@
 /**
- * Light Check implementation. Names match SociACL PR #14
+ * Light Check implementation. Names match SociACL master
  * docs/aimmune-ir-check.d.ts. Hopcap 1 — do not walk friend edges.
  */
 

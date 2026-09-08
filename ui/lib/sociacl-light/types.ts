@@ -1,8 +1,9 @@
 /**
  * Light Check consume contract for AImmune / Brewnix IR site console.
  *
- * Re-typed from FyberLabs/SociACL PR #14 docs/aimmune-ir-check.d.ts
- * (merged to master). Copy / re-type — do not `npm install sociacl`.
+ * Re-typed from FyberLabs/SociACL master docs/aimmune-ir-check.d.ts
+ * (https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.d.ts).
+ * Landed via PR #14. Copy / re-type — do not `npm install sociacl`.
  * No Rust / NAPI / WASM on the Next light path.
  *
  * Binding (objects + masks, do not fork):
