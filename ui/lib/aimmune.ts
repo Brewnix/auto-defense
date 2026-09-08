@@ -56,6 +56,43 @@ export async function closeIncident(
   return runAimmune(["incident", "close", "--id", incidentId]);
 }
 
+export async function grantPropose(body: {
+  incident_id: string;
+  profile: string;
+  ttl: number;
+  reason: string;
+  tools?: string[];
+  ticket_id?: string;
+  notes?: string;
+  action?: "propose" | "mint-local";
+}): Promise<{ code: number; stdout: string; stderr: string }> {
+  const action = body.action || "propose";
+  const args = [
+    "grant",
+    action,
+    "--incident-id",
+    body.incident_id,
+    "--profile",
+    body.profile,
+    "--ttl",
+    String(body.ttl),
+    "--reason",
+    body.reason,
+  ];
+  for (const tool of body.tools || []) {
+    if (tool.trim()) {
+      args.push("--tool", tool.trim());
+    }
+  }
+  if (body.ticket_id?.trim()) {
+    args.push("--ticket-id", body.ticket_id.trim());
+  }
+  if (action === "mint-local") {
+    args.push("--notes", (body.notes || "").trim() || "ui local mint");
+  }
+  return runAimmune(args);
+}
+
 export async function ownerResolve(
   receiptId: string,
   action: "approve" | "deny",

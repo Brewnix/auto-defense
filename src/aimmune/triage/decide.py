@@ -107,7 +107,7 @@ def should_call_model(
 
 
 def allow_model_execute(rails: RailsStub, now: datetime | None = None) -> bool:
-    """Derived from the rails stub. Not an envelope field. No grant store."""
+    """Deprecated rails-stub helper. Cycle uses ``elevation_from_runtime``."""
     if rails.profile not in {"ir_elevated", "break_glass"}:
         return False
     if not rails.grant_active:

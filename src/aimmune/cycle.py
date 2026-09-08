@@ -15,6 +15,10 @@ from aimmune.incident.minimal import IncidentStore
 from aimmune.ledger.ttl import TtlLedger
 from aimmune.auditor.client import AuditorClient
 from aimmune.auditor.watch import AuditorWatch
+from aimmune.grants.client import GrantClient
+from aimmune.grants.hotreload import elevation_from_runtime
+from aimmune.grants.poll import poll_grants
+from aimmune.grants.store import GrantStore
 from aimmune.host.owner import OwnerClient
 from aimmune.notify.drain import sync_plane
 from aimmune.notify.held import snapshot_from_proposals
@@ -22,7 +26,6 @@ from aimmune.notify.queue import NotifyQueue, NotifyQueueError
 from aimmune.plane.jobs import SiteJobsClient
 from aimmune.plane.posture import SitePostureClient
 from aimmune.policy import RateLimiter, decide
-from aimmune.triage.decide import allow_model_execute, execute_allowlist
 from aimmune.triage.runner import apply_triage, build_engines
 from aimmune.preempt.queue import PreemptQueue
 from aimmune.receipt.chain import ReceiptChain, build_receipt
@@ -48,6 +51,7 @@ class CycleResult:
     receipts: list[dict[str, Any]] = field(default_factory=list)
     plane: dict[str, Any] | None = None
     sweep: dict[str, Any] | None = None
+    grants: dict[str, Any] | None = None
     policy_inputs: list[dict[str, Any]] = field(default_factory=list)
 
 
@@ -69,6 +73,8 @@ class Runtime:
     jobs: SiteJobsClient | None = None
     posture: SitePostureClient | None = None
     owner: OwnerClient | None = None
+    grants: GrantStore | None = None
+    grant_client: GrantClient | None = None
     triage_engines: list[Any] = field(default_factory=list)
     last_policy_envelopes: list[dict[str, Any]] = field(default_factory=list)
 
@@ -108,6 +114,16 @@ def build_posture_client(cfg: Config, *, clock: Clock | None = None) -> SitePost
     )
 
 
+def build_grant_client(cfg: Config) -> GrantClient | None:
+    if not cfg.panopticon_base_url or not cfg.hm_site_token:
+        return None
+    return GrantClient(
+        cfg.panopticon_base_url,
+        cfg.hm_site_token,
+        timeout_s=cfg.plane_timeout_s,
+    )
+
+
 def build_owner_client(cfg: Config) -> OwnerClient | None:
     sock = cfg.resolved_owner_sock
     token_path = cfg.resolved_owner_token_path
@@ -133,6 +149,8 @@ def build_runtime(
     jobs: SiteJobsClient | None = None,
     posture: SitePostureClient | None = None,
     owner: OwnerClient | None = None,
+    grants: GrantStore | None = None,
+    grant_client: GrantClient | None = None,
     triage_engines: list[Any] | None = None,
 ) -> Runtime:
     cfg = config or load_config()
@@ -164,6 +182,8 @@ def build_runtime(
         jobs=jobs if jobs is not None else build_jobs_client(cfg, clock=clk),
         posture=posture if posture is not None else build_posture_client(cfg, clock=clk),
         owner=owner if owner is not None else build_owner_client(cfg),
+        grants=grants if grants is not None else GrantStore(cfg.grants_path),
+        grant_client=grant_client if grant_client is not None else build_grant_client(cfg),
         triage_engines=(
             list(triage_engines)
             if triage_engines is not None
@@ -260,8 +280,7 @@ def _run_detect_envelope(
     prior = rt.ledger.prior_blocks(now, list(members))
     whitelist = load_whitelist(rt.config.whitelist_path)
     receipt_id = str(uuid4())
-    rails = rt.config.triage.rails
-    model_exec = allow_model_execute(rails, now)
+    elev = elevation_from_runtime(rt, envelope=envelope, now=now)
     result = decide(
         envelope,
         pin=rt.config.iface_pin,
@@ -273,9 +292,9 @@ def _run_detect_envelope(
         auto_rule_ids=rt.rules.auto_execute_rule_ids,
         receipt_id=receipt_id,
         site_id=rt.config.site_id,
-        allow_model_execute=model_exec,
+        allow_model_execute=elev.allow_model_execute,
         confidence_theta=rt.config.triage.confidence_theta,
-        model_tool_allowlist=execute_allowlist(rails, now),
+        model_tool_allowlist=elev.tool_allowlist,
         bundle={k: v for k, v in bundle.items() if k != "_digest"},
     )
     envelope = dict(envelope)
@@ -608,7 +627,15 @@ def run_cycle(rt: Runtime) -> CycleResult:
         except Exception:  # noqa: BLE001 — cycle must still return local receipts
             plane = {"drain": {"errors": ["sync_plane failed"]}, "poll": {}}
 
-    # Incident auto_quiet after detect/expiry (and plane sync). Sweep
+    # Grant poll after detect/expiry/auditor sync. Short timeout; never
+    # blocks contain. Local expire + flag sync still run when plane-down.
+    grant_sync: dict[str, Any] | None = None
+    try:
+        grant_sync = poll_grants(rt)
+    except Exception:  # noqa: BLE001 — cycle must still return local receipts
+        grant_sync = {"errors": ["poll_grants failed"]}
+
+    # Incident auto_quiet after detect/expiry (and plane / grant sync). Sweep
     # failure must never block contain — receipts are already written.
     sweep: dict[str, Any] | None = None
     try:
@@ -622,5 +649,6 @@ def run_cycle(rt: Runtime) -> CycleResult:
         receipts=receipts,
         plane=plane,
         sweep=sweep,
+        grants=grant_sync,
         policy_inputs=policy_inputs,
     )

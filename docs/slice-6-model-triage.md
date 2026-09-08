@@ -15,7 +15,7 @@ A **judge-only** local model on the same pipeline as the zero-LLM loop: `feature
 
 | | Rule |
 |---|------|
-| A | Full judge path under **strict** (model propose/hold/notify only). Elevated execute only via an **injected rails stub** for acceptance #5. Real `privilege_grant` plane store = slice 7 — this slice does **not** mint grants. |
+| A | Full judge path under **strict** (model propose/hold/notify only). Elevated execute is grant-gated (slice 7). A **deprecated rails stub** remains as a test-only injector. |
 | B | CI uses **MockEngine + fixture envelopes**. Optional Ollama HTTP adapter is behind config and is skipped when unreachable. |
 | C | `model_assist` is implemented and tested. **Default off.** Home default = `rules_only` (no engines) or `rules_primary` (engines configured). `model_primary` is rejected. |
 | D | Eval harness is offline **pytest replay** (schema rate, subject-bind, strict dry-run over-execute=0, offline contain). No eval service. |
@@ -39,17 +39,11 @@ Also locked from model-triage-v0: single envelope winner (never merge); ≤1 sch
 
 ## Rails stub vs slice 7
 
-`AIMMUNE_RAILS_PROFILE=strict|ir_elevated|break_glass` already existed. Slice 6 adds a **test/cottage stub** only:
+Slice 7 is the SoT. `allow_model_execute` is derived from an **active privilege grant** first. No grant → strict.
 
-| Knob | Meaning |
-|------|---------|
-| `AIMMUNE_RAILS_GRANT_ACTIVE` | Stub "active grant". Profile alone does **not** elevate. |
-| `AIMMUNE_RAILS_GRANT_UNTIL` | RFC3339. After this instant, `allow_model_execute` is false. |
-| `AIMMUNE_RAILS_TOOL_ALLOWLIST` | Optional execute catalog for the stub (tests). |
+`AIMMUNE_RAILS_GRANT_*` / `RailsStub` remain a **deprecated test-only override** (pytest fixtures). Profile alone does **not** elevate. After `active_until` the stub is expired (strict). Production must not rely on these env knobs.
 
-`allow_model_execute` is true only when the stub is active **and** profile is `ir_elevated` or `break_glass` **and** now < `active_until`. This is **not** a privilege-grant store. Slice 7 will replace the stub with the plane grant object. Do not mint grants here.
-
-`hypermesh.*` are never implied by profile. They execute from a model only if the stub allowlist lists them explicitly (cottage tests); home default catalog does not.
+`hypermesh.*` are never implied by profile. They execute from a model only if an explicit `tool_allowlist_add` (or the empty emergency pack, which adds nothing) lists them.
 
 ## Engines
 
@@ -110,7 +104,7 @@ Same as slices 1–5, plus:
 | `AIMMUNE_OLLAMA_MODEL` | engine id | Ollama model name |
 | `AIMMUNE_OLLAMA_TIMEOUT_S` | `3` | Short HTTP timeout |
 | `AIMMUNE_RAILS_PROFILE` | `strict` | Resting profile |
-| `AIMMUNE_RAILS_GRANT_ACTIVE` | `false` | Cottage/test stub until slice 7 |
+| `AIMMUNE_RAILS_GRANT_ACTIVE` | `false` | **Deprecated** test-only override (slice 7 grants are SoT) |
 | `AIMMUNE_RAILS_GRANT_UNTIL` | unset | Stub expiry |
 | `AIMMUNE_RAILS_TOOL_ALLOWLIST` | empty | Stub execute allowlist |
 

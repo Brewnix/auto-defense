@@ -1,7 +1,8 @@
-"""CLI: cycle, loop, drain, poll-tickets, preempt, incident, owner, ui-snapshot.
+"""CLI: cycle, loop, drain, poll-tickets, preempt, incident, grant, owner, ui-snapshot.
 
-Plane resolve stays plane-only. Site-local owner approve/deny is slice 5.
-Incident close/sweep is slice 3 (overlay; never gates contain).
+Plane resolve / grant resolve stay plane-only. Site-local owner
+approve/deny is slice 5. Incident close/sweep is slice 3 (overlay;
+never gates contain). Home grant mint is site-local only.
 """
 
 from __future__ import annotations
@@ -18,6 +19,12 @@ from pathlib import Path
 from aimmune.canonical import canonical_dumps
 from aimmune.config import load_config
 from aimmune.cycle import build_runtime, run_cycle
+from aimmune.grants.client import GrantError
+from aimmune.grants.home import PlaneUpMintError, mint_local
+from aimmune.grants.hotreload import elevation_from_runtime
+from aimmune.grants.poll import poll_grants
+from aimmune.grants.propose import build_asks, build_propose_body
+from aimmune.grants.validate import GrantValidationError
 from aimmune.incident.minimal import GrantActiveError, IncidentError
 from aimmune.notify.drain import drain_queue, poll_tickets
 from aimmune.owner.local import WaitingOnPlaneError, local_resolve
@@ -53,6 +60,7 @@ def cmd_cycle(args: argparse.Namespace) -> int:
         "state_dir": str(rt.config.state_dir),
         "plane_reachable": rt.config.plane_reachable,
         "plane": result.plane,
+        "grants": result.grants,
         "sweep": result.sweep,
     }
     print(canonical_dumps(summary))
@@ -220,6 +228,164 @@ def cmd_incident(args: argparse.Namespace) -> int:
     return 1
 
 
+def _asks_from_args(args: argparse.Namespace) -> list:
+    return build_asks(
+        tools=list(args.tool or []),
+        rate_limit=args.rate_limit,
+        model_tier=args.tier,
+        budget_tokens=args.budget,
+        template_ids=list(args.template or []),
+    )
+
+
+def cmd_grant(args: argparse.Namespace) -> int:
+    """propose / get / list / poll / mint-local / status. Resolve is plane-only."""
+    rt = _runtime_from_args(args)
+    cmd = args.grant_cmd
+    if cmd == "status":
+        now = rt.clock.now()
+        if args.incident_id:
+            grant = rt.grants.active_for_incident(args.incident_id, now)
+            elev = elevation_from_runtime(rt, incident_id=args.incident_id, now=now)
+            print(
+                canonical_dumps(
+                    {
+                        "incident_id": args.incident_id,
+                        "grant": grant,
+                        "allow_model_execute": elev.allow_model_execute,
+                        "profile": elev.profile,
+                        "source": elev.source,
+                        "tool_allowlist": sorted(elev.tool_allowlist),
+                    }
+                )
+            )
+            return 0
+        rows = []
+        for grant in rt.grants.list():
+            rows.append(
+                {
+                    "grant_id": grant.get("grant_id"),
+                    "incident_id": grant.get("incident_id"),
+                    "status": grant.get("status"),
+                    "active_until": grant.get("active_until"),
+                    "rails_profile": (grant.get("resolution") or {}).get("rails_profile")
+                    or grant.get("rails_profile_requested"),
+                }
+            )
+        print(canonical_dumps({"grants": rows, "count": len(rows)}))
+        return 0
+    if cmd == "poll":
+        result = poll_grants(rt)
+        print(canonical_dumps(result))
+        return 0 if not result.get("errors") else 1
+    if cmd == "list":
+        if rt.grant_client is None:
+            rows = rt.grants.list()
+            if args.status:
+                rows = [r for r in rows if r.get("status") == args.status]
+            if args.incident_id:
+                rows = [r for r in rows if r.get("incident_id") == args.incident_id]
+            print(canonical_dumps({"grants": rows, "count": len(rows), "source": "cache"}))
+            return 0
+        try:
+            rows = rt.grant_client.list_grants(
+                status=args.status, incident_id=args.incident_id
+            )
+        except GrantError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
+        print(canonical_dumps({"grants": rows, "count": len(rows), "source": "plane"}))
+        return 0
+    if cmd == "get":
+        if rt.grant_client is None:
+            row = rt.grants.get(args.id)
+            if row is None:
+                print("ERROR: grant not in site cache", file=sys.stderr)
+                return 1
+            print(canonical_dumps(row))
+            return 0
+        try:
+            row = rt.grant_client.get_grant(args.id)
+        except GrantError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
+        rt.grants.upsert(row)
+        print(canonical_dumps(row))
+        return 0
+    if cmd == "propose":
+        try:
+            asks = _asks_from_args(args)
+            body = build_propose_body(
+                site_id=rt.config.site_id,
+                incident_id=args.incident_id,
+                reason_redacted=args.reason,
+                asks=asks,
+                profile=args.profile,
+                ttl_s=args.ttl,
+                now=rt.clock.now(),
+                trace_id=args.trace_id,
+                ticket_id=args.ticket_id,
+                requested_by={
+                    "kind": args.requested_by_kind,
+                    "id": args.requested_by_id,
+                },
+            )
+        except (GrantValidationError, IncidentError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
+        if rt.grant_client is None:
+            print(
+                "ERROR: PANOPTICON_BASE_URL and HM_SITE_TOKEN required for propose; "
+                "use mint-local when the plane is down",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            created = rt.grant_client.propose(
+                body,
+                idempotency_key=args.idempotency_key
+                or f"{rt.config.site_id}:{args.incident_id}:{body['trace_id']}",
+            )
+        except GrantError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
+        if created.get("grant_id"):
+            rt.grants.upsert(created)
+        print(canonical_dumps(created))
+        return 0
+    if cmd == "mint-local":
+        try:
+            grant = mint_local(
+                store=rt.grants,
+                incidents=rt.incidents,
+                site_id=rt.config.site_id,
+                incident_id=args.incident_id,
+                ticket_id=args.ticket_id,
+                notes=args.notes,
+                reason_redacted=args.reason,
+                asks=_asks_from_args(args),
+                profile=args.profile,
+                ttl_s=args.ttl,
+                trace_id=args.trace_id,
+                requested_by={
+                    "kind": args.requested_by_kind,
+                    "id": args.requested_by_id,
+                },
+                now=rt.clock.now(),
+                plane_reachable=rt.config.plane_reachable,
+            )
+        except PlaneUpMintError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        except (GrantValidationError, IncidentError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
+        print(canonical_dumps(grant))
+        return 0
+    print(f"ERROR: unknown grant command {cmd}", file=sys.stderr)
+    return 1
+
+
 def cmd_ui_snapshot(args: argparse.Namespace) -> int:
     rt = _runtime_from_args(args)
     snap = build_snapshot(rt, limit=args.limit)
@@ -377,6 +543,76 @@ def main(argv: list[str] | None = None) -> int:
     inc_ops.add_argument("--unit", default=None)
     inc_ops.add_argument("--trace-id", default=None)
     inc_ops.set_defaults(func=cmd_incident, incident_cmd="open-ops")
+
+    grant = sub.add_parser(
+        "grant",
+        help=(
+            "privilege grant propose/get/list/poll/mint-local/status. "
+            "Resolve/revoke are plane-only — this CLI does not call them."
+        ),
+    )
+    grant_sub = grant.add_subparsers(dest="grant_cmd", required=True)
+
+    def _add_grant_ask_flags(p: argparse.ArgumentParser) -> None:
+        _add_shared(p)
+        p.add_argument("--incident-id", required=True)
+        p.add_argument("--profile", default="ir_elevated", choices=("ir_elevated", "break_glass"))
+        p.add_argument("--ttl", type=int, default=1800, help="requested TTL seconds (clamped)")
+        p.add_argument("--reason", required=True, help="redacted reason (no prompts)")
+        p.add_argument("--ticket-id", default=None)
+        p.add_argument("--trace-id", default=None)
+        p.add_argument("--tool", action="append", default=[], help="tool_allowlist_add entry (repeat)")
+        p.add_argument("--tier", default=None, help="model_tier ask")
+        p.add_argument("--budget", type=int, default=None, help="budget_tokens.max_tokens")
+        p.add_argument("--template", action="append", default=[], help="prompt_route template id")
+        p.add_argument("--rate-limit", type=int, default=None, help="blocks_per_hour cap")
+        p.add_argument("--requested-by-kind", default="human", choices=("human", "automation"))
+        p.add_argument("--requested-by-id", default="aimmune-cli/grant")
+
+    g_propose = grant_sub.add_parser(
+        "propose",
+        help="POST a grant propose to the plane (idempotent site_id+incident_id+trace_id)",
+    )
+    _add_grant_ask_flags(g_propose)
+    g_propose.add_argument("--idempotency-key", default=None)
+    g_propose.set_defaults(func=cmd_grant, grant_cmd="propose")
+
+    g_get = grant_sub.add_parser("get", help="GET one grant (incl. terminal) from plane or cache")
+    _add_shared(g_get)
+    g_get.add_argument("--id", required=True, help="grant UUID")
+    g_get.set_defaults(func=cmd_grant, grant_cmd="get")
+
+    g_list = grant_sub.add_parser(
+        "list",
+        help="list grants (plane when configured, else site cache)",
+    )
+    _add_shared(g_list)
+    g_list.add_argument("--status", default=None, choices=("proposed", "approved", "denied", "timed_out", "revoked", "expired"))
+    g_list.add_argument("--incident-id", default=None)
+    g_list.set_defaults(func=cmd_grant, grant_cmd="list")
+
+    g_poll = grant_sub.add_parser(
+        "poll",
+        help="cycle-end poll: approved/proposed by incident → cache (never blocks contain)",
+    )
+    _add_shared(g_poll)
+    g_poll.set_defaults(func=cmd_grant, grant_cmd="poll")
+
+    g_mint = grant_sub.add_parser(
+        "mint-local",
+        help="home offline mint into the site cache (plane-down only; never POST /resolve)",
+    )
+    _add_grant_ask_flags(g_mint)
+    g_mint.add_argument("--notes", required=True, help="required redacted notes for local mint")
+    g_mint.set_defaults(func=cmd_grant, grant_cmd="mint-local", profile="break_glass")
+
+    g_status = grant_sub.add_parser(
+        "status",
+        help="show cached grants / active elevation for an incident",
+    )
+    _add_shared(g_status)
+    g_status.add_argument("--incident-id", default=None)
+    g_status.set_defaults(func=cmd_grant, grant_cmd="status")
 
     owner = sub.add_parser(
         "owner",

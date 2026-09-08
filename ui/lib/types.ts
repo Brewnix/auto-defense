@@ -91,6 +91,37 @@ export type PreemptQueueRow = {
   done?: boolean;
 };
 
+export type GrantAsk = {
+  kind?: string;
+  tools?: string[];
+  metric?: string;
+  limit?: number;
+  tier?: string;
+  max_tokens?: number;
+  template_ids?: string[];
+};
+
+export type GrantRow = {
+  grant_id?: string;
+  incident_id?: string;
+  site_id?: string;
+  status?: string;
+  rails_profile_requested?: string | null;
+  rails_profile?: string | null;
+  ttl_s_requested?: number | null;
+  ttl_s?: number | null;
+  active_until?: string | null;
+  ticket_id?: string | null;
+  trace_id?: string | null;
+  requested_at?: string;
+  requested_by?: { kind?: string; id?: string };
+  reason_redacted?: string;
+  asks?: GrantAsk[];
+  notes_redacted?: string;
+  resolved_by?: string;
+  resolved_at?: string;
+};
+
 export type Snapshot = {
   site_id: string;
   plane_reachable: boolean;
@@ -109,4 +140,5 @@ export type Snapshot = {
     queue: PreemptQueueRow[];
     receipts: ReceiptRow[];
   };
+  grants: GrantRow[];
 };

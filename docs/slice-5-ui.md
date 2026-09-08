@@ -16,7 +16,7 @@ Site-local operator console. Tickets are **intent**. Actuation source of truth i
 | A | Next.js App Router + shadcn/ui in this repo (`ui/`). Not FastAPI+HTMX. |
 | B | Auth is `AIMMUNE_UI_TOKEN` bearer. Bind **127.0.0.1** by default (`AIMMUNE_UI_HOST` / `AIMMUNE_UI_PORT`). SociACL is slice 8. |
 | C | Site UI may **local-approve/deny** a held companion when `plane_reachable=false` **or** no plane ticket exists yet. When an auditor watch/ticket exists and the plane is up, show waiting-on-plane (slice 2 poll applies) — **do not double-resolve** from the site. |
-| D | Write surface is local approve/deny only. Optional short redacted annotate note. No rule-pack editor, no SID UI, no grant mint. |
+| D | Write surface is local approve/deny plus optional grant propose / plane-down mint-local. Optional short redacted annotate note. No rule-pack editor, no SID UI. |
 | E | Run: `cd ui && npm run dev` / production `npm run start`. Optional `python -m aimmune ui` prints the env checklist and can `--start` Next. |
 | F | Pure status-copy helpers + unit tests. Never “blocked” from resolve alone; pending-intent; timed_out waiting; blocked only after a site apply receipt that actually blocked **and** the ack path. Iface-pin CI stays. UI CI is lint / typecheck / vitest (no Playwright). |
 
@@ -73,10 +73,11 @@ Optional `--note` is a short redacted `receipt.annotate` (max 500).
 | `/receipts` | last N receipts — id, **actor kind/id**, purpose, policy.decision, tools, effects, human, parent_id |
 | `/holds` | notify_queue + auditor_watch with status copy; local approve/deny when allowed |
 | `/incidents` | `incidents.jsonl` overlay (slice 3 enrich: kind / status / subjects / links / counts + human close) |
+| `/grants` | slice 7 snapshot list + minimal propose / mint-local; ticket approve ≠ elevation |
 | `/preempt` | pending `preempt_queue.jsonl` + recent `hypermesh.*` receipts |
 | `/settings` | token field → httpOnly cookie |
 
-**Not present:** IR chat, Hypermesh `/v1/ir/chat`, model chat, rule-pack editor, SID UI, grant mint.
+**Not present:** IR chat, Hypermesh `/v1/ir/chat`, model chat, rule-pack editor, SID UI.
 
 The API serializer (`aimmune.ui.serialize`) allowlists digest / effect / policy fields and recursively strips prompt / payload / EVE-like keys.
 

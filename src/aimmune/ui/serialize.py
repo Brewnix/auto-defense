@@ -229,6 +229,49 @@ def serialize_held(held: dict[str, Any] | None) -> dict[str, Any] | None:
     )
 
 
+def serialize_grant(row: dict[str, Any]) -> dict[str, Any]:
+    """Redacted grant view. No prompts, payloads, or resolve verbs."""
+    resolution = row.get("resolution") or {}
+    asks = []
+    for ask in row.get("asks") or []:
+        if not isinstance(ask, dict):
+            continue
+        asks.append(
+            {
+                "kind": ask.get("kind"),
+                "tools": list(ask.get("tools") or []) or None,
+                "metric": ask.get("metric"),
+                "limit": ask.get("limit"),
+                "tier": ask.get("tier"),
+                "max_tokens": ask.get("max_tokens"),
+                "template_ids": list(ask.get("template_ids") or []) or None,
+            }
+        )
+        asks[-1] = {k: v for k, v in asks[-1].items() if v is not None}
+    return strip_unsafe(
+        {
+            "grant_id": row.get("grant_id"),
+            "incident_id": row.get("incident_id"),
+            "site_id": row.get("site_id"),
+            "status": row.get("status"),
+            "rails_profile_requested": row.get("rails_profile_requested"),
+            "rails_profile": resolution.get("rails_profile"),
+            "ttl_s_requested": row.get("ttl_s_requested"),
+            "ttl_s": resolution.get("ttl_s"),
+            "active_until": row.get("active_until"),
+            "ticket_id": row.get("ticket_id"),
+            "trace_id": row.get("trace_id"),
+            "requested_at": row.get("requested_at"),
+            "requested_by": row.get("requested_by") or {},
+            "reason_redacted": row.get("reason_redacted"),
+            "asks": asks,
+            "notes_redacted": resolution.get("notes_redacted"),
+            "resolved_by": resolution.get("resolved_by"),
+            "resolved_at": resolution.get("resolved_at"),
+        }
+    )
+
+
 def serialize_preempt_queue_row(row: dict[str, Any]) -> dict[str, Any]:
     tools = [p.get("tool") for p in (row.get("proposals") or []) if p.get("tool")]
     return strip_unsafe(
