@@ -75,7 +75,7 @@ Optional `--note` is a short redacted `receipt.annotate` (max 500).
 | `/incidents` | `incidents.jsonl` overlay (slice 3 enrich: kind / status / subjects / links / counts + human close) |
 | `/grants` | slice 7 snapshot + propose / mint-local (`GrantStore`); slice 8 Check-gates human propose and home mint. Ticket approve ≠ elevation. |
 | `/preempt` | pending `preempt_queue.jsonl` + recent `hypermesh.*` receipts |
-| `/settings` | token field → httpOnly cookie (slice 8: + cottage principal) |
+| `/settings` | token field → httpOnly cookie; SIWE Connect (injected `window.ethereum`) |
 
 **Not present:** IR chat, Hypermesh `/v1/ir/chat`, model chat, rule-pack editor, SID UI.
 

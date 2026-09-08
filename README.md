@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Engineering repo:** [`Brewnix/auto-defense`](https://github.com/Brewnix/auto-defense) (this repo)  
-**Status:** **slice 8** — SociACL IR UX (MockCheck) on top of slices 0–7 and 9. See [`docs/slice-8-sociacl-ir.md`](docs/slice-8-sociacl-ir.md).  
+**Status:** **slice 8 + SIWE v0** — SociACL IR UX (MockCheck) plus EIP-4361 cottage session. See [`docs/slice-8-sociacl-ir.md`](docs/slice-8-sociacl-ir.md) and [`docs/siwe-v0.md`](docs/siwe-v0.md).  
 **License:** [MIT](LICENSE)  
 **Contracts:** pin [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208) in [`vendor/inference-iface`](vendor/inference-iface). Do **not** fork or weaken those locks here.  
 **SociACL consume (copy / re-type, master — not the PR branch):** [`docs/aimmune-ir-check.d.ts`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.d.ts) (`4218cd4022b452d6329007a37b39ee16457facf4`) · [`docs/aimmune-ir-check.md`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.md) (`38fb1a5b20c05f429af5283f95226d2360aee2c8`). Landed via [SociACL #14](https://github.com/FyberLabs/SociACL/pull/14). Do not `npm install sociacl`.  
@@ -52,7 +52,7 @@ Full table: [`docs/slice-0-inventory.md`](docs/slice-0-inventory.md). Roadmap: [
 
 ## Recommended vertical
 
-`0 → 1 → 2 → 4 → 5` then package. **Slices 0–7 and 9 landed; 8 this PR.**
+`0 → 1 → 2 → 4 → 5` then package. **Slices 0–9 landed; SIWE v0 is the cottage session on slice 8.**
 
 ```bash
 python -m pip install -e '.[dev]'
@@ -69,7 +69,7 @@ pytest
 5. AImmune UI v0 — [`docs/slice-5-ui.md`](docs/slice-5-ui.md) — **landed**  
 6. Model triage — [`docs/slice-6-model-triage.md`](docs/slice-6-model-triage.md) — **landed**  
 7. Privilege grant — [`docs/slice-7-privilege-grant.md`](docs/slice-7-privilege-grant.md) — **landed**  
-8. SociACL IR UX — [`docs/slice-8-sociacl-ir.md`](docs/slice-8-sociacl-ir.md) — **this PR**  
+8. SociACL IR UX — [`docs/slice-8-sociacl-ir.md`](docs/slice-8-sociacl-ir.md) — **landed**; SIWE v0 — [`docs/siwe-v0.md`](docs/siwe-v0.md)  
 9. Package as one site daemon — [`docs/slice-9-package.md`](docs/slice-9-package.md) — **landed**
 
 ## Plane doors (cite, don’t reimplement)

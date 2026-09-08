@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Repo:** `Brewnix/auto-defense`  
-**Status:** this slice  
+**Status:** landed (SIWE v0 follow-on: [`siwe-v0.md`](siwe-v0.md))  
 **Pin:** [`vendor/inference-iface`](../vendor/inference-iface) → [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208)  
 **Consume contract (SociACL master — copy / re-type only):**  
 [`docs/aimmune-ir-check.d.ts`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.d.ts) (`4218cd4022b452d6329007a37b39ee16457facf4`) · [`docs/aimmune-ir-check.md`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.md) (`38fb1a5b20c05f429af5283f95226d2360aee2c8`)  
@@ -47,7 +47,7 @@ Rules: object owner → allow; else a matching live grant with `now ∈ [from, u
 | Non-`break_glass` propose / mint (`/grants` → `/api/grant`) | `execute` on `:ir` at act |
 | `break_glass` propose / mint | `execute` **and** principal ∈ `AIMMUNE_OWNER_PRINCIPALS` |
 
-Session principal comes from the cottage SIWE address cookie (`aimmune_principal` / `X-AImmune-Principal`) when set. Loopback smoke may use `AIMMUNE_UI_SMOKE_PRINCIPAL` after the UI token is accepted. Re-Check every act — do not cache allow.
+Session principal: verified EIP-4361 SIWE (`GET /api/siwe/nonce` + `POST /api/siwe/verify`) sets the signed httpOnly `aimmune_principal` cookie. `resolvePrincipal` source `"siwe"` is only that cookie. Paste-principal / `X-AImmune-Principal` are smoke-only (non-prod, or `AIMMUNE_UI_ALLOW_SMOKE_PRINCIPAL=1`). See [`docs/siwe-v0.md`](siwe-v0.md). Re-Check every act — do not cache allow.
 
 Dual grant SoT (slice 7 + this Check gate):
 
@@ -76,6 +76,8 @@ Auditor and grant **`POST …/resolve` on the plane remain plane JWT**. Panoptic
 | `AIMMUNE_OWNER_PRINCIPALS` | Comma-separated SIWE addresses. First address owns `site:{id}` and `site:{id}:ir` when no fixture objects exist. |
 | `AIMMUNE_SOCIACL_FIXTURE` | Optional JSON `{ objects, grants }` for MockCheck rows |
 | `AIMMUNE_UI_ALLOW_SMOKE_PRINCIPAL` | Opt-in smoke principal in production |
+| `AIMMUNE_SIWE_DOMAIN` | EIP-4361 domain (default `127.0.0.1`) — [`siwe-v0.md`](siwe-v0.md) |
+| `AIMMUNE_SIWE_CHAIN_ID` | Optional required chain id |
 | `SITE_ID` / `AIMMUNE_SITE_ID` | Same token as envelopes / grants / auditor scope |
 | `HM_SITE_TOKEN` | Machine door — unchanged |
 
@@ -137,6 +139,7 @@ Cancel: `cancelDelegate` / `undelegate` deletes the row. The next resolve is den
 
 ```bash
 cd ui && npm ci && npm run lint && npm run typecheck && npm test
+# SIWE v0: ui/lib/siwe/siwe.test.ts + auth dual-principal cases
 pytest -q tests/test_contain_no_check.py tests/test_owner_annotate.py tests/test_grant_mint_local.py tests/test_grants.py
 ```
 
