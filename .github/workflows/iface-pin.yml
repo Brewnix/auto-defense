@@ -1,0 +1,43 @@
+name: iface pin
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate-pin:
+    name: validate inference-iface pin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Fail if pin missing
+        run: |
+          set -euo pipefail
+          test -f .gitmodules
+          grep -q 'vendor/inference-iface' .gitmodules
+          grep -q 'Brewnix/inference-iface' .gitmodules
+          test -e vendor/inference-iface/.git
+          test -d vendor/inference-iface/schemas
+          test -n "$(ls vendor/inference-iface/schemas/*.v0.json 2>/dev/null)"
+          echo "pin present: $(git -C vendor/inference-iface rev-parse HEAD)"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install schema tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'check-jsonschema>=0.29' 'jsonschema>=4.23' 'referencing>=0.35'
+
+      - name: check-jsonschema metaschema (schemas/*.v0.json)
+        run: check-jsonschema --check-metaschema vendor/inference-iface/schemas/*.v0.json
+
+      - name: Validate pin schemas + examples
+        run: python scripts/validate-iface-pin.py

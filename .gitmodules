@@ -1,0 +1,3 @@
+[submodule "vendor/inference-iface"]
+	path = vendor/inference-iface
+	url = https://github.com/Brewnix/inference-iface.git
