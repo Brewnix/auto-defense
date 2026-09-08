@@ -32,3 +32,7 @@ aimmune = ["rules/*.yaml", "grants/packs/*.json"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "plane_mocked: optional plane-mocked synthetic (default off; pytest -m plane_mocked)",
+]
+addopts = ["-m", "not plane_mocked"]
