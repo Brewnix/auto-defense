@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   bearerFromHeader,
@@ -7,6 +7,14 @@ import {
   tokensEqual,
 } from "./auth";
 import { statusBadgeVariant } from "@/components/status-badge";
+import { signSiweSession } from "@/lib/siwe/session";
+
+const MIXED = "0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
+const LOWER = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("status copy guards", () => {
   it("never treats resolve-like statuses as blocked", () => {
@@ -46,13 +54,39 @@ describe("bearer token", () => {
 });
 
 describe("dual principal", () => {
-  it("prefers SIWE / cottage session over smoke", () => {
+  it("labels a verified SIWE cookie as siwe and normalizes 0x", () => {
+    vi.stubEnv("AIMMUNE_UI_TOKEN", "test-token");
+    const cookie = signSiweSession(MIXED);
+    expect(cookie).toBeTruthy();
     const { principal, source } = resolvePrincipal({
-      cookie: "0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      cookie,
       header: null,
       tokenOk: true,
     });
-    expect(principal).toBe("0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+    expect(principal).toBe(LOWER);
     expect(source).toBe("siwe");
+  });
+
+  it("treats unsigned paste as smoke, never siwe", () => {
+    const { principal, source } = resolvePrincipal({
+      cookie: MIXED,
+      header: null,
+      tokenOk: true,
+    });
+    expect(principal).toBe(LOWER);
+    expect(source).toBe("smoke");
+  });
+
+  it("does not let paste-principal claim siwe in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("AIMMUNE_UI_TOKEN", "prod-token");
+    vi.stubEnv("AIMMUNE_UI_ALLOW_SMOKE_PRINCIPAL", "");
+    const { principal, source } = resolvePrincipal({
+      cookie: MIXED,
+      header: MIXED,
+      tokenOk: true,
+    });
+    expect(principal).toBeNull();
+    expect(source).toBeNull();
   });
 });

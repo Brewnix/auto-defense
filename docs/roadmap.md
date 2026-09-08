@@ -25,7 +25,7 @@ Then package as one site daemon.
 |-------|------|------|
 | **6** | **done** | Model triage (`actor.kind: model`, local-only cottage v0). LLM judges; policy executes. [`docs/slice-6-model-triage.md`](slice-6-model-triage.md). |
 | **7** | **done** | Privilege grant site client (`#50`). Plane mint / site cache / home offline mint. [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md). |
-| **8** | **this PR** | SociACL IR UX (`Check` / `delegate` for human resolve / mint). Dual auth with `hm_site_`. [`docs/slice-8-sociacl-ir.md`](slice-8-sociacl-ir.md). |
+| **8** | **done** | SociACL IR UX (`Check` / `delegate` for human resolve / mint). Dual auth with `hm_site_`. [`docs/slice-8-sociacl-ir.md`](slice-8-sociacl-ir.md). SIWE v0: [`docs/siwe-v0.md`](siwe-v0.md). |
 | **9** | **done** | Package: one site daemon + host wiring runbook (no image bake). [`docs/slice-9-package.md`](slice-9-package.md). |
 
 Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 3. Slice 8 stays off the critical path until grants exist. Slice 6 is judge-only; slice 7 mints / caches grants.
@@ -114,10 +114,11 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Runbook: [`docs/slice-9-package.md`](slice-9-package.md)
 - Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
 
-## Slice 8 exit (this PR)
+## Slice 8 exit (landed)
 
 - `ui/lib/sociacl-light` — copied IR light contract from SociACL **master** (`docs/aimmune-ir-check.d.ts` @ `4218cd4022b452d6329007a37b39ee16457facf4` / `.md` @ `38fb1a5b20c05f429af5283f95226d2360aee2c8`; landed via #14) + in-memory MockCheck
-- Dual auth: `AIMMUNE_UI_TOKEN` loopback smoke; human acts re-Check SIWE / cottage principal
+- Dual auth: `AIMMUNE_UI_TOKEN` loopback smoke; human acts re-Check a SIWE / cottage principal
+- SIWE v0 (follow-on): EIP-4361 nonce → `personal_sign` → verify; signed httpOnly cookie; paste-principal is smoke-only. [`docs/siwe-v0.md`](siwe-v0.md)
 - `AIMMUNE_OWNER_PRINCIPALS` owner gate; `break_glass` = execute on `:ir` **and** owner (not a SociACL verb)
 - `/holds` local resolve gated `execute`; annotate gated `write`; redacted view `see`/`read`
 - `/grants` Check-gates slice 7 plane `#50` propose (when up) and `GrantStore` `mint-local` (plane down). Body stays Brewnix `fyber.privilege_grant/v0` (≠ delegate)
@@ -125,6 +126,15 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Plane `POST …/resolve` remains JWT — documented gap
 - Tests: MockCheck binding 1–6 + annotate pytest; iface pin unchanged
 - Runbook: [`docs/slice-8-sociacl-ir.md`](slice-8-sociacl-ir.md)
+
+## SIWE v0 (cottage session)
+
+- `GET /api/siwe/nonce` + `POST /api/siwe/verify` with viem (`verifyMessage`). EOA only.
+- Settings Connect uses injected `window.ethereum` (`personal_sign`). No WalletConnect / Wagmi.
+- Signed httpOnly `aimmune_principal` (`v1.<addr>.<hmac>`). `source: "siwe"` only after verify.
+- Paste-principal / `POST /api/session` `{ principal }` is smoke-only; production fails closed unless `AIMMUNE_UI_ALLOW_SMOKE_PRINCIPAL=1`.
+- Env: `AIMMUNE_SIWE_DOMAIN` (loopback default), statement binds `site:{SITE_ID}`, optional `AIMMUNE_SIWE_CHAIN_ID`.
+- MockCheck / `requireIrAct` unchanged. Iface pin unchanged. [`docs/siwe-v0.md`](siwe-v0.md).
 
 ## Slice 5 exit (landed)
 

@@ -4,9 +4,11 @@ import {
   COOKIE_NAME,
   PRINCIPAL_COOKIE,
   configuredUiToken,
+  smokePrincipalAllowed,
   tokensEqual,
 } from "@/lib/auth";
 import { loadIrSession } from "@/lib/ir";
+import { NONCE_COOKIE } from "@/lib/siwe";
 import { normalizePrincipal } from "@/lib/sociacl-light/principal";
 
 function cookieOpts(secure: boolean) {
@@ -61,6 +63,15 @@ export async function POST(request: Request) {
     });
   }
   if (body.principal !== undefined) {
+    if (!smokePrincipalAllowed()) {
+      return NextResponse.json(
+        {
+          error:
+            "production requires SIWE (POST /api/siwe/verify); paste principal is smoke-only",
+        },
+        { status: 403 },
+      );
+    }
     const principal = normalizePrincipal(body.principal);
     if (!principal) {
       return NextResponse.json({ error: "principal required" }, { status: 400 });
@@ -80,7 +91,7 @@ export async function POST(request: Request) {
 export async function DELETE() {
   const response = NextResponse.json({ ok: true });
   const secure = process.env.NODE_ENV === "production";
-  for (const name of [COOKIE_NAME, PRINCIPAL_COOKIE]) {
+  for (const name of [COOKIE_NAME, PRINCIPAL_COOKIE, NONCE_COOKIE]) {
     response.cookies.set({
       name,
       value: "",

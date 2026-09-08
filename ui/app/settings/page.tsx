@@ -7,8 +7,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { smokePrincipalAllowed } from "@/lib/auth";
 import { loadIrSession } from "@/lib/ir";
 
+import { SiweConnect } from "./siwe-connect";
 import { TokenForm } from "./token-form";
 
 export const dynamic = "force-dynamic";
@@ -21,14 +23,15 @@ export default async function SettingsPage({
   const params = await searchParams;
   const reason = params.reason;
   const session = await loadIrSession();
+  const smokeAllowed = smokePrincipalAllowed();
   return (
     <AppShell principal={session.principal}>
       <div className="flex flex-col gap-2">
         <h2 className="font-heading text-xl font-medium">Settings</h2>
         <p className="text-sm text-muted-foreground">
-          Dual auth: <code>AIMMUNE_UI_TOKEN</code> for loopback smoke;
-          production human path requires Check (SIWE / cottage principal).
-          Machine doors stay <code>hm_site_</code>. Bind defaults to 127.0.0.1.
+          Dual auth: <code>AIMMUNE_UI_TOKEN</code> is required to serve;
+          production human path is EIP-4361 SIWE → Check. Machine doors stay{" "}
+          <code>hm_site_</code>. Bind defaults to 127.0.0.1.
         </p>
       </div>
       {reason === "unset" ? (
@@ -51,14 +54,27 @@ export default async function SettingsPage({
       ) : null}
       <Card>
         <CardHeader>
-          <CardTitle>UI token + principal</CardTitle>
+          <CardTitle>UI token</CardTitle>
           <CardDescription>
-            Token must match the server env. Principal is the cottage SIWE
-            address used at Check time. Never commit secrets.
+            Token must match the server env. Required to serve (proxy). Never
+            commit secrets.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <TokenForm />
+          <TokenForm smokeAllowed={smokeAllowed} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>SIWE v0</CardTitle>
+          <CardDescription>
+            Connect → personal_sign EIP-4361 → verify. Sets the httpOnly{" "}
+            <code>aimmune_principal</code> cookie only after a valid signature.
+            Address is the SociACL AccessorId.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SiweConnect />
         </CardContent>
       </Card>
       <Alert>

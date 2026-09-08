@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 
+import { isSignedSiweCookie, readSiweSessionCookie } from "@/lib/siwe/session";
 import {
   normalizePrincipal,
   smokePrincipalFromEnv,
@@ -59,24 +60,45 @@ export function smokePrincipalAllowed(): boolean {
   return process.env.NODE_ENV !== "production";
 }
 
+function smokePastedPrincipal(
+  cookie?: string | null,
+  header?: string | null,
+): AccessorId | null {
+  const fromHeader = normalizePrincipal(header);
+  if (fromHeader) {
+    return fromHeader;
+  }
+  if (isSignedSiweCookie(cookie)) {
+    return null;
+  }
+  return normalizePrincipal(cookie);
+}
+
 /**
  * Dual auth: UI token still opens the loopback console.
- * Human acts need a SIWE / cottage principal. Loopback smoke may
- * use AIMMUNE_UI_SMOKE_PRINCIPAL when the token is valid.
+ * source "siwe" is only a verified (HMAC) cookie from POST /api/siwe/verify.
+ * Paste-principal and X-AImmune-Principal are smoke-only, and fail closed
+ * in production unless AIMMUNE_UI_ALLOW_SMOKE_PRINCIPAL=1.
  */
 export function resolvePrincipal(input: {
   cookie?: string | null;
   header?: string | null;
   tokenOk?: boolean;
 }): { principal: AccessorId | null; source: "siwe" | "smoke" | null } {
-  const session = normalizePrincipal(input.header) || normalizePrincipal(input.cookie);
-  if (session) {
-    return { principal: session, source: "siwe" };
+  const verified = readSiweSessionCookie(input.cookie);
+  if (verified) {
+    return { principal: verified, source: "siwe" };
   }
-  if (input.tokenOk && smokePrincipalAllowed()) {
-    const smoke = smokePrincipalFromEnv();
-    if (smoke) {
-      return { principal: smoke, source: "smoke" };
+  if (smokePrincipalAllowed()) {
+    const pasted = smokePastedPrincipal(input.cookie, input.header);
+    if (pasted) {
+      return { principal: pasted, source: "smoke" };
+    }
+    if (input.tokenOk) {
+      const smoke = smokePrincipalFromEnv();
+      if (smoke) {
+        return { principal: smoke, source: "smoke" };
+      }
     }
   }
   return { principal: null, source: null };

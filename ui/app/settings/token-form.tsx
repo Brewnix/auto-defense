@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-export function TokenForm() {
+export function TokenForm({ smokeAllowed }: { smokeAllowed: boolean }) {
   const router = useRouter();
   const [token, setToken] = useState("");
   const [principal, setPrincipal] = useState("");
@@ -25,7 +25,7 @@ export function TokenForm() {
       if (token) {
         body.token = token;
       }
-      if (principal.trim()) {
+      if (smokeAllowed && principal.trim()) {
         body.principal = principal.trim();
       }
       const response = await fetch("/api/session", {
@@ -61,25 +61,28 @@ export function TokenForm() {
             onChange={(event) => setToken(event.target.value)}
           />
           <FieldDescription>
-            Loopback smoke. Authorization: Bearer on API routes, or this cookie
-            after submit. Machine doors stay <code>hm_site_</code>.
+            Loopback smoke / serve door. Authorization: Bearer on API routes, or
+            this cookie after submit. Machine doors stay <code>hm_site_</code>.
           </FieldDescription>
         </Field>
-        <Field>
-          <FieldLabel htmlFor="ui-principal">Cottage / SIWE principal</FieldLabel>
-          <Input
-            id="ui-principal"
-            autoComplete="off"
-            value={principal}
-            onChange={(event) => setPrincipal(event.target.value)}
-            placeholder="0x… SIWE address"
-          />
-          <FieldDescription>
-            Production human path requires Check against this principal. Loopback
-            may use <code>AIMMUNE_UI_SMOKE_PRINCIPAL</code> instead.
-          </FieldDescription>
-        </Field>
-        <Button type="submit" disabled={busy || (!token && !principal.trim())}>
+        {smokeAllowed ? (
+          <Field>
+            <FieldLabel htmlFor="ui-principal">Smoke principal (loopback)</FieldLabel>
+            <Input
+              id="ui-principal"
+              autoComplete="off"
+              value={principal}
+              onChange={(event) => setPrincipal(event.target.value)}
+              placeholder="0x… (not SIWE)"
+            />
+            <FieldDescription>
+              Non-prod / <code>AIMMUNE_UI_ALLOW_SMOKE_PRINCIPAL=1</code> only.
+              Does not claim <code>source:siwe</code>. Production human path is
+              Connect wallet → personal_sign.
+            </FieldDescription>
+          </Field>
+        ) : null}
+        <Button type="submit" disabled={busy || (!token && !(smokeAllowed && principal.trim()))}>
           {busy ? "Saving…" : "Store session"}
         </Button>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}

@@ -12,7 +12,8 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (
     pathname.startsWith("/settings") ||
-    pathname.startsWith("/api/session")
+    pathname.startsWith("/api/session") ||
+    pathname.startsWith("/api/siwe")
   ) {
     return NextResponse.next();
   }
