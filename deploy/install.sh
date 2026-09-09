@@ -80,4 +80,5 @@ Next steps (not run by this script):
 
 No .deb/.rpm. No image bake. No Tailscale. UI stays on 127.0.0.1 unless you
 opt in with AIMMUNE_UI_HOST=0.0.0.0. Host wiring: docs/slice-9-package.md
+Packaging matrix (Orin systemd / Mac brew / USB): docs/packaging-v0.md
 EOF

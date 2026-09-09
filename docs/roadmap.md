@@ -145,7 +145,7 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Optional UI path on cottage: SIWE Connect (landed) or smoke principal — [`docs/siwe-v0.md`](siwe-v0.md)
 - Runbook: [`docs/synthetics-v0.md`](synthetics-v0.md) · [`docs/host-install-smoke.md`](host-install-smoke.md) · [`docs/usb-layout.md`](usb-layout.md)
 
-## SIWE / MockCheck durability v0 (this cut)
+## SIWE / MockCheck durability v0 (landed)
 
 - Cookie `v2.<addr>.<exp>.<hmac>`; expired → logged out. Settings source / expiry / Sign out
 - Durable MockCheck at `$AIMMUNE_STATE_DIR/sociacl-mock.json` (0600). Fixture does not wipe a populated store
@@ -158,6 +158,17 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Script: [`scripts/smoke-cottage-offline.sh`](../scripts/smoke-cottage-offline.sh). Optional `workflow_dispatch` only — [`.github/workflows/testing-harden-optional.yml`](../.github/workflows/testing-harden-optional.yml). Secrets missing → skip, not fail
 - `plane_mocked` FakeAuditor/FakeGrants and offline vertical SoT unchanged. No Playwright. UI stays Vitest. Iface pin unchanged
 - Runbook: [`docs/testing-harden-v0.md`](testing-harden-v0.md)
+
+## Packaging v0 (this cut)
+
+- One code SoT (`deploy/` systemd). Homebrew + USB are adapters only
+- Orin / Jetson = JetPack Ubuntu + existing systemd path. Compose is not the AImmune runtime
+- Mac = [`packaging/homebrew/aimmune.rb`](../packaging/homebrew/aimmune.rb) formula + `brew services` (`service do`). Mock / offline / loopback UI. No live OPNsense contain on Mac
+- USB cottage [`install.sh`](../usb/roles/aimmune-cottage/install.sh) calls `deploy/install.sh` after unpack; `VERSION` + `SHA256SUMS`. Gateway / Host are thin stubs to other repos
+- Never bake `HM_SITE_TOKEN` / `AIMMUNE_UI_TOKEN` onto the stick
+- Out of scope: `.deb`/`.rpm`, ISO bake, Compose-primary, notarized Mac app, Tailscale, iface pin bump, k8s, Playwright
+- Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
+- Runbook: [`docs/packaging-v0.md`](packaging-v0.md)
 
 ## Slice 5 exit (landed)
 

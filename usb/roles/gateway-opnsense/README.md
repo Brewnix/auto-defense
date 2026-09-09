@@ -1,6 +1,6 @@
 # Role: gateway-opnsense (USB stub)
 
-Pointer only. This repo does **not** vendor OPNsense, Suricata, or a qcow.
+Pointer only. This repo does **not** vendor OPNsense, Suricata, or a qcow. Thin installer: [`install.sh`](install.sh) (prints this pointer and exits 2).
 
 ## Owns
 
@@ -11,7 +11,8 @@ Pointer only. This repo does **not** vendor OPNsense, Suricata, or a qcow.
 ## Source
 
 - Image / role: [`Brewnix/proxmox-firewall`](https://github.com/Brewnix/proxmox-firewall)
-- AImmune consume: `AIMMUNE_EVE_PATH` · [`docs/slice-1-zero-llm.md`](../../../docs/slice-1-zero-llm.md) · [`docs/slice-9-package.md`](../../../docs/slice-9-package.md)
+- **Run that repo’s installer** — do not install the gateway from `auto-defense`
+- AImmune consume: `AIMMUNE_EVE_PATH` · [`docs/slice-1-zero-llm.md`](../../../docs/slice-1-zero-llm.md) · [`docs/packaging-v0.md`](../../../docs/packaging-v0.md)
 
 ## Tarball (conceptual)
 

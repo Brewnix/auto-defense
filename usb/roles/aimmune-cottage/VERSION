@@ -1,0 +1,6 @@
+# AImmune USB cottage pin. Not a secret. Sourced by install.sh.
+PRODUCT=AImmune
+PACKAGE=aimmune
+VERSION=0.1.0
+REPO=Brewnix/auto-defense
+IFACE_PIN=3621849bbf7c368b1d709356c465883144300208

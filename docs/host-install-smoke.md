@@ -5,9 +5,10 @@
 **Status:** doc + optional offline script ([`scripts/smoke-cottage-offline.sh`](../scripts/smoke-cottage-offline.sh); default-off `live_cottage` — [`docs/testing-harden-v0.md`](testing-harden-v0.md))  
 **Pin:** [`vendor/inference-iface`](../vendor/inference-iface) → [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208)  
 **Extends:** [`docs/slice-9-package.md`](slice-9-package.md)  
-**USB layout:** [`docs/usb-layout.md`](usb-layout.md)
+**USB layout:** [`docs/usb-layout.md`](usb-layout.md)  
+**Packaging matrix:** [`docs/packaging-v0.md`](packaging-v0.md) — Orin systemd / Mac brew / USB role installers
 
-Cottage install smoke for one site daemon. **No ISO bake. No `.deb` / `.rpm`.** Brewnix roles own the gateway, Eve, WireGuard, and Host. AImmune ships pip + systemd + env + docs + optional UI.
+Cottage install smoke for one site daemon (Linux or **Orin / Jetson on JetPack Ubuntu** — native systemd, same `deploy/install.sh`; Compose is not the AImmune runtime). **No ISO bake. No `.deb` / `.rpm`.** Brewnix roles own the gateway, Eve, WireGuard, and Host. AImmune ships pip + systemd + env + docs + optional UI. Mac is a Homebrew mock/offline adapter, not this smoke.
 
 ## Locked design
 
@@ -45,7 +46,7 @@ Confirm the other USB roles exist **or** the equivalent lab stubs:
 - Host: not required for offline contain. H4 `owner.sock` only if you will exercise preempt later.
 - Identity: chosen `SITE_ID` (example `net-tn-cottage`). Do **not** auto-bind `Device.site_id` from the daemon.
 
-Pointers: [`usb/roles/gateway-opnsense/README.md`](../usb/roles/gateway-opnsense/README.md) · [`usb/roles/hypermesh-host/README.md`](../usb/roles/hypermesh-host/README.md) · [`usb/roles/aimmune-cottage/README.md`](../usb/roles/aimmune-cottage/README.md).
+Pointers: [`usb/roles/gateway-opnsense/README.md`](../usb/roles/gateway-opnsense/README.md) · [`usb/roles/hypermesh-host/README.md`](../usb/roles/hypermesh-host/README.md) · [`usb/roles/aimmune-cottage/README.md`](../usb/roles/aimmune-cottage/README.md). Gateway / Host stubs tell you to run those repos’ installers. Cottage [`install.sh`](../usb/roles/aimmune-cottage/install.sh) verifies `VERSION` + `SHA256SUMS` and calls [`deploy/install.sh`](../deploy/install.sh).
 
 ### 2. pip + `install.sh`
 
@@ -54,9 +55,11 @@ git clone --recurse-submodules https://github.com/Brewnix/auto-defense.git
 cd auto-defense
 python3 -m pip install -e .
 sudo ./deploy/install.sh
+# USB adapter (same SoT after pin/checksum verify):
+# sudo ./usb/roles/aimmune-cottage/install.sh
 ```
 
-`install.sh` copies units + `/etc/aimmune/aimmune.env` (0600 if new). It does **not** enable units or invent a user. Confirm `command -v aimmune`. If `ExecStart=` is not `/usr/local/bin/aimmune`, edit the unit (venv or `python -m aimmune loop`). See [`docs/slice-9-package.md`](slice-9-package.md).
+`deploy/install.sh` copies units + `/etc/aimmune/aimmune.env` (0600 if new). It does **not** enable units or invent a user. Confirm `command -v aimmune`. If `ExecStart=` is not `/usr/local/bin/aimmune`, edit the unit (venv or `python -m aimmune loop`). See [`docs/slice-9-package.md`](slice-9-package.md). Orin is this same path on JetPack Ubuntu.
 
 ### 3. Perms
 
@@ -157,4 +160,4 @@ Optional: `verify-chain` ok; offline synthetic contain+hold ([`docs/synthetics-v
 
 ## Out of scope
 
-ISO / USB bake · `.deb` / `.rpm` · Tailscale · public UI default · k8s · embedding Next in the Python process · vendoring Host / OPNsense · iface pin change · `schemas/` amend · ERC-1271 / WalletConnect (SIWE v0 stays injected EOA).
+ISO / USB bake · `.deb` / `.rpm` · Compose-primary · notarized Mac app · Tailscale · public UI default · k8s · Playwright · embedding Next in the Python process · vendoring Host / OPNsense · iface pin change · `schemas/` amend · ERC-1271 / WalletConnect (SIWE v0 stays injected EOA). Packaging adapters: [`docs/packaging-v0.md`](packaging-v0.md).

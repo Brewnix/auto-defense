@@ -1,6 +1,6 @@
 # Role: hypermesh-host (USB stub)
 
-Pointer only. This repo does **not** vendor Hypermesh Host or a qcow.
+Pointer only. This repo does **not** vendor Hypermesh Host or a qcow. Thin installer: [`install.sh`](install.sh) (prints this pointer and exits 2).
 
 ## Owns
 
@@ -11,6 +11,7 @@ Pointer only. This repo does **not** vendor Hypermesh Host or a qcow.
 ## Source
 
 - [`FyberLabs/hypermesh-host`](https://github.com/FyberLabs/hypermesh-host)
+- **Run that repo’s installer** — do not install Host from `auto-defense`
 - AImmune consume: `AIMMUNE_HOST_STATE_DIR` / `HYPERMESH_STATE_DIR` — [`docs/slice-4-preempt.md`](../../../docs/slice-4-preempt.md)
 
 ## Tarball (conceptual)
