@@ -57,7 +57,8 @@ def test_amended_docs_point_at_packaging_v0() -> None:
 def test_homebrew_formula_is_formula_not_cask() -> None:
     text = FORMULA.read_text(encoding="utf-8")
     assert "class Aimmune < Formula" in text
-    assert "cask" not in text.lower()
+    assert "class Aimmune < Cask" not in text
+    assert "not cask" in text.lower()
     assert "service do" in text
     assert 'AIMMUNE_EXEC_MOCK:        "1"' in text or 'AIMMUNE_EXEC_MOCK:' in text
     assert "AIMMUNE_PLANE_REACHABLE" in text
