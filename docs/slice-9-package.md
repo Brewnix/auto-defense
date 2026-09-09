@@ -4,9 +4,10 @@
 **Repo:** `Brewnix/auto-defense`  
 **Status:** this slice  
 **Pin:** [`vendor/inference-iface`](../vendor/inference-iface) → [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208)  
-**Does not wait on slice 8.** UI token / local owner paths stay valid. SociACL is later.
+**Does not wait on slice 8.** UI token / local owner paths stay valid. SociACL is later.  
+**Packaging adapters (Orin / Mac / USB):** [`docs/packaging-v0.md`](packaging-v0.md)
 
-Ship the existing `aimmune` Python package plus in-repo systemd units and an env contract. **No** `.deb` / `.rpm` in v0. **No** host image bake. Cite OPNsense / Eve / alias_util / WireGuard / `HM_SITE_TOKEN` / H4 `owner.sock` — do **not** vendor [`Brewnix/proxmox-firewall`](https://github.com/Brewnix/proxmox-firewall) or [`FyberLabs/hypermesh-host`](https://github.com/FyberLabs/hypermesh-host).
+Ship the existing `aimmune` Python package plus in-repo systemd units and an env contract. **No** `.deb` / `.rpm` in v0. **No** host image bake. **Orin / Jetson** is this same systemd path on JetPack Ubuntu — Compose is not the AImmune primary runtime. Cite OPNsense / Eve / alias_util / WireGuard / `HM_SITE_TOKEN` / H4 `owner.sock` — do **not** vendor [`Brewnix/proxmox-firewall`](https://github.com/Brewnix/proxmox-firewall) or [`FyberLabs/hypermesh-host`](https://github.com/FyberLabs/hypermesh-host).
 
 ## Locked design (Chris 2026-09-08)
 
@@ -163,4 +164,4 @@ Full list lives in [`deploy/aimmune.env.example`](../deploy/aimmune.env.example)
 
 ## Out of scope
 
-Tailscale · public UI default · Panopticon in this package · IR chat · baking OPNsense/Host into this repo · `.deb`/`.rpm` · waiting on SociACL · k8s · SaaS telemetry · embedding Next in Python · iface pin change · `schemas/` amend.
+Tailscale · public UI default · Panopticon in this package · IR chat · baking OPNsense/Host into this repo · `.deb`/`.rpm` · Compose-primary · notarized Mac app · waiting on SociACL · k8s · Playwright · SaaS telemetry · embedding Next in Python · iface pin change · `schemas/` amend. Platform matrix: [`docs/packaging-v0.md`](packaging-v0.md).
