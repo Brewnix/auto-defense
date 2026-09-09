@@ -33,7 +33,7 @@ From [SociACL master](https://github.com/FyberLabs/SociACL/blob/master/docs/aimm
 - `checkDelegate`, `applyDelegate`, `cancelDelegate` / `undelegate`, `remintCapability` stub
 - `mapAction` (`see` → `read`), `acceptHint` never allows, `until` exclusive
 
-MockCheck in-memory rows: `principal`, `object`, `mask`, `from?`, `until?`, `owner?`.
+MockCheck rows: `principal`, `object`, `mask`, `from?`, `until?`, `owner?`. Durable file: `$AIMMUNE_STATE_DIR/sociacl-mock.json` (0600). `AIMMUNE_SOCIACL_FIXTURE` seeds only when that store is empty or missing. See [`siwe-mockcheck-durability-v0.md`](siwe-mockcheck-durability-v0.md).
 
 Rules: object owner → allow; else a matching live grant with `now ∈ [from, until)`; cancel deletes the row → next Check denies.
 
@@ -74,7 +74,7 @@ Auditor and grant **`POST …/resolve` on the plane remain plane JWT**. Panoptic
 | `AIMMUNE_UI_TOKEN` | Required to serve (loopback smoke) |
 | `AIMMUNE_UI_SMOKE_PRINCIPAL` | Loopback Check principal when no SIWE cookie |
 | `AIMMUNE_OWNER_PRINCIPALS` | Comma-separated SIWE addresses. First address owns `site:{id}` and `site:{id}:ir` when no fixture objects exist. |
-| `AIMMUNE_SOCIACL_FIXTURE` | Optional JSON `{ objects, grants }` for MockCheck rows |
+| `AIMMUNE_SOCIACL_FIXTURE` | Optional JSON `{ objects, grants }` — seeds MockCheck **only** when `$AIMMUNE_STATE_DIR/sociacl-mock.json` is empty or missing |
 | `AIMMUNE_UI_ALLOW_SMOKE_PRINCIPAL` | Opt-in smoke principal in production |
 | `AIMMUNE_SIWE_DOMAIN` | EIP-4361 domain (default `127.0.0.1`) — [`siwe-v0.md`](siwe-v0.md) |
 | `AIMMUNE_SIWE_CHAIN_ID` | Optional required chain id |

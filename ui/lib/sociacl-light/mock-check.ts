@@ -20,11 +20,17 @@ type StoredGrant = DelegateGrant & { from?: number };
 export class MockCheck implements DelegateAcl {
   private owners = new Map<SiteObjectId, AccessorId>();
   private grants: StoredGrant[] = [];
+  private onMutate?: () => void;
 
   constructor(rows: readonly MockCheckRow[] = []) {
     for (const row of rows) {
       this.addRow(row);
     }
+  }
+
+  /** Persist hook for the durable store. Not called from addRow / putObject. */
+  setOnMutate(fn: (() => void) | undefined): void {
+    this.onMutate = fn;
   }
 
   addRow(row: MockCheckRow): void {
@@ -97,6 +103,7 @@ export class MockCheck implements DelegateAcl {
       throw new Error("stateDelegateGrant is owner-only");
     }
     this.grants.push({ ...grant });
+    this.onMutate?.();
   }
 
   unstateDelegateGrant(
@@ -110,6 +117,32 @@ export class MockCheck implements DelegateAcl {
     this.grants = this.grants.filter(
       (row) => !(row.accessor === accessor && row.object === object),
     );
+    this.onMutate?.();
+  }
+
+  /** Durable snapshot. Owners and grants only — not owner-as-grant rows(). */
+  exportState(): {
+    objects: Array<{ object: SiteObjectId; owner: AccessorId }>;
+    grants: Array<{
+      principal: AccessorId;
+      object: SiteObjectId;
+      mask: ActionMask;
+      from?: number;
+      until?: number;
+    }>;
+  } {
+    const objects = [...this.owners.entries()].map(([object, owner]) => ({
+      object,
+      owner,
+    }));
+    const grants = this.grants.map((row) => ({
+      principal: row.accessor,
+      object: row.object,
+      mask: row.mask,
+      ...(row.from !== undefined ? { from: row.from } : {}),
+      ...(row.until !== undefined ? { until: row.until } : {}),
+    }));
+    return { objects, grants };
   }
 
   rows(): MockCheckRow[] {

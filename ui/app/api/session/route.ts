@@ -26,6 +26,7 @@ export async function GET() {
     ok: true,
     principal: session.principal,
     source: session.source,
+    exp: session.exp,
     site_id: session.siteId,
     caps: session.caps,
     dual: {
@@ -88,6 +89,7 @@ export async function POST(request: Request) {
   return response;
 }
 
+/** Clears UI token + SIWE signed principal (v2 / leftover v1) + nonce. */
 export async function DELETE() {
   const response = NextResponse.json({ ok: true });
   const secure = process.env.NODE_ENV === "production";

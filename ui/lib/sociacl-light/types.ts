@@ -104,3 +104,13 @@ export type MockCheckRow = {
   until?: number;
   owner?: AccessorId;
 };
+
+/** Live grant row for Settings / ACL UI. */
+export type LiveMockGrant = {
+  object: SiteObjectId;
+  accessor: AccessorId;
+  mask: ActionMask;
+  from?: number;
+  until?: number;
+  owner?: AccessorId;
+};

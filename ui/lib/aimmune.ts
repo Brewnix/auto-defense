@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 
+import { configuredStateDir } from "@/lib/state-dir";
 import type { Snapshot } from "@/lib/types";
 
 function repoRoot(): string {
@@ -16,8 +17,9 @@ export function runAimmune(
   const python = process.env.AIMMUNE_PYTHON || "python3";
   const root = repoRoot();
   const extra: string[] = [];
-  if (process.env.AIMMUNE_STATE_DIR) {
-    extra.push("--state-dir", process.env.AIMMUNE_STATE_DIR);
+  const stateDir = configuredStateDir();
+  if (stateDir) {
+    extra.push("--state-dir", stateDir);
   }
   const env = { ...process.env };
   const src = path.join(root, "src");

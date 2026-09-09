@@ -8,6 +8,8 @@ export AIMMUNE_OWNER_PRINCIPALS=0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 export AIMMUNE_UI_SMOKE_PRINCIPAL=0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 export AIMMUNE_SIWE_DOMAIN=127.0.0.1
 # AIMMUNE_SIWE_CHAIN_ID=1
+# AIMMUNE_SIWE_SECRET=          # preferred; UI-token HMAC is transitional
+# AIMMUNE_SIWE_TTL_S=43200
 export AIMMUNE_STATE_DIR=/tmp/aimmune-state
 export AIMMUNE_UI_HOST=127.0.0.1   # default; 0.0.0.0 is an explicit opt-in
 cd ui && npm install && npm run dev
