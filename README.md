@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Engineering repo:** [`Brewnix/auto-defense`](https://github.com/Brewnix/auto-defense) (this repo)  
-**Status:** **slice 8 + SIWE v0** — SociACL IR UX (MockCheck) plus EIP-4361 cottage session. See [`docs/slice-8-sociacl-ir.md`](docs/slice-8-sociacl-ir.md) and [`docs/siwe-v0.md`](docs/siwe-v0.md).  
+**Status:** **slice 8 + SIWE v0 + testing harden v0** — SociACL IR UX (MockCheck) plus EIP-4361 cottage session; opt-in live cottage / plane staging tracks. See [`docs/slice-8-sociacl-ir.md`](docs/slice-8-sociacl-ir.md), [`docs/siwe-v0.md`](docs/siwe-v0.md), and [`docs/testing-harden-v0.md`](docs/testing-harden-v0.md).  
 **License:** [MIT](LICENSE)  
 **Contracts:** pin [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208) in [`vendor/inference-iface`](vendor/inference-iface). Do **not** fork or weaken those locks here.  
 **SociACL consume (copy / re-type, master — not the PR branch):** [`docs/aimmune-ir-check.d.ts`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.d.ts) (`4218cd4022b452d6329007a37b39ee16457facf4`) · [`docs/aimmune-ir-check.md`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.md) (`38fb1a5b20c05f429af5283f95226d2360aee2c8`). Landed via [SociACL #14](https://github.com/FyberLabs/SociACL/pull/14). Do not `npm install sociacl`.  
@@ -36,6 +36,7 @@ git submodule update --init --recursive
 | Cottage package (systemd + env) | **Here** (slice 9) — [`docs/slice-9-package.md`](docs/slice-9-package.md) · [`deploy/`](deploy/) | Host image bake stays in proxmox-firewall / hypermesh-host |
 | Offline synthetics v0 | **Here** — [`docs/synthetics-v0.md`](docs/synthetics-v0.md) · [`tests/test_synthetic_vertical_offline.py`](tests/test_synthetic_vertical_offline.py) | Live Eve / OPNsense / plane stay out |
 | Host-install smoke (doc) | **Here** — [`docs/host-install-smoke.md`](docs/host-install-smoke.md) · [`docs/usb-layout.md`](docs/usb-layout.md) | USB bake / ISO stay out |
+| Testing harden v0 | **Here** — [`docs/testing-harden-v0.md`](docs/testing-harden-v0.md) · `live_cottage` / `plane_staging` (default-off) | Live Eve / OPNsense / `lease_stop` stay out |
 
 **Not this repo:** Panopticon SaaS gateway fork, Hypermesh-router IR chat UI, `schemas/` amends, market/renter surfaces, Tailscale-as-plane-transport, `.deb`/`.rpm`.
 
@@ -61,8 +62,10 @@ python -m pip install -e '.[dev]'
 AIMMUNE_STATE_DIR=/tmp/aimmune-state AIMMUNE_EXEC_MOCK=1 python -m aimmune cycle
 python -m aimmune status --json
 pytest
-# offline vertical SoT is included; plane-mocked synthetic is default-off:
+# offline vertical SoT is included; default-off tracks:
 # pytest -m plane_mocked
+# AIMMUNE_LIVE_COTTAGE=1 pytest -m live_cottage
+# PANOPTICON_BASE_URL=… HM_SITE_TOKEN=… SITE_ID=… pytest -m plane_staging
 ```
 
 0. Pin iface + plane inventory freeze (docs) — **landed**  
@@ -118,4 +121,4 @@ aimmune status                    # always exits 0; --json for scripts
 journalctl -u aimmune -f
 ```
 
-Optional UI: `cd ui && npm ci && npm run build`, copy to `/usr/local/lib/aimmune/ui`, set `AIMMUNE_UI_TOKEN`, then `systemctl enable --now aimmune-ui.service` (127.0.0.1). Host wiring checklist (Eve, OPNsense `alias_util`, WireGuard, `#38` token, `Device.site_id`, H4 `owner.sock`): [`docs/slice-9-package.md`](docs/slice-9-package.md). Cottage smoke (doc-only, no ISO): [`docs/host-install-smoke.md`](docs/host-install-smoke.md). Offline vertical synthetic: [`docs/synthetics-v0.md`](docs/synthetics-v0.md).
+Optional UI: `cd ui && npm ci && npm run build`, copy to `/usr/local/lib/aimmune/ui`, set `AIMMUNE_UI_TOKEN`, then `systemctl enable --now aimmune-ui.service` (127.0.0.1). Host wiring checklist (Eve, OPNsense `alias_util`, WireGuard, `#38` token, `Device.site_id`, H4 `owner.sock`): [`docs/slice-9-package.md`](docs/slice-9-package.md). Cottage smoke (doc + offline script, no ISO): [`docs/host-install-smoke.md`](docs/host-install-smoke.md) · [`scripts/smoke-cottage-offline.sh`](scripts/smoke-cottage-offline.sh). Offline vertical synthetic: [`docs/synthetics-v0.md`](docs/synthetics-v0.md). Testing harden (default-off markers): [`docs/testing-harden-v0.md`](docs/testing-harden-v0.md).
