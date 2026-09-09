@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Repo:** `Brewnix/auto-defense`  
-**Status:** doc-only  
+**Status:** doc + optional offline script ([`scripts/smoke-cottage-offline.sh`](../scripts/smoke-cottage-offline.sh); default-off `live_cottage` — [`docs/testing-harden-v0.md`](testing-harden-v0.md))  
 **Pin:** [`vendor/inference-iface`](../vendor/inference-iface) → [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208)  
 **Extends:** [`docs/slice-9-package.md`](slice-9-package.md)  
 **USB layout:** [`docs/usb-layout.md`](usb-layout.md)
@@ -109,6 +109,8 @@ aimmune status --json
 ```
 
 Expect `plane_reachable: false`, a growing `receipts.count`, and journal lines from `aimmune.service` only. No public port. No SaaS.
+
+Automated v0 (prefix dir, no root, `AIMMUNE_EXEC_MOCK=1`): [`scripts/smoke-cottage-offline.sh`](../scripts/smoke-cottage-offline.sh). Pytest marker `live_cottage` is default-off — [`docs/testing-harden-v0.md`](testing-harden-v0.md).
 
 ### 7. Optional UI (loopback + SIWE/smoke)
 

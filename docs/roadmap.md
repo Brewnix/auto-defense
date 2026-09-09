@@ -136,14 +136,21 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Env: `AIMMUNE_SIWE_DOMAIN` (loopback default), statement binds `site:{SITE_ID}`, optional `AIMMUNE_SIWE_CHAIN_ID`.
 - MockCheck / `requireIrAct` unchanged. Iface pin unchanged. [`docs/siwe-v0.md`](siwe-v0.md).
 
-## Synthetics v0 + host-install smoke (this cut)
+## Synthetics v0 + host-install smoke (landed)
 
 - Offline vertical SoT: plane-down + `AIMMUNE_EXEC_MOCK=1` → Eve burst → rules contain (`port_scan`) **and** hold (`ssh_brute`) → verify-chain → local resolve → `grant mint-local` → `status --json`. No live Suricata / OPNsense / WG / Panopticon. Does not require SIWE crypto.
 - Compose existing fixtures (`conftest`, `MockAlias`). Rules-only default. Plane-mocked marker is default-off (`FakeAuditor` / `FakeGrants` only)
 - Folded into existing `pytest` CI. Iface-pin unchanged. UI stays Vitest
-- Host-install smoke is **doc-only** (extends slice 9). USB roles are pointers + tarball notes, not qcow. Brewnix owns gateway/Eve/WG/Host; AImmune ships pip + systemd + env + docs + optional UI
+- Host-install smoke started **doc-only** (extends slice 9). USB roles are pointers + tarball notes, not qcow. Cottage offline script + `live_cottage` landed in testing harden v0
 - Optional UI path on cottage: SIWE Connect (landed) or smoke principal — [`docs/siwe-v0.md`](siwe-v0.md)
 - Runbook: [`docs/synthetics-v0.md`](synthetics-v0.md) · [`docs/host-install-smoke.md`](host-install-smoke.md) · [`docs/usb-layout.md`](usb-layout.md)
+
+## Testing harden v0 (this cut)
+
+- Two **default-off** markers: `live_cottage` (cottage install path → offline contain, `AIMMUNE_EXEC_MOCK=1`) and `plane_staging` (live WireGuard site-token **safe** subset + deny resolve/revoke). Neither folds into unmarked `pytest -q` / PR pytest
+- Script: [`scripts/smoke-cottage-offline.sh`](../scripts/smoke-cottage-offline.sh). Optional `workflow_dispatch` only — [`.github/workflows/testing-harden-optional.yml`](../.github/workflows/testing-harden-optional.yml). Secrets missing → skip, not fail
+- `plane_mocked` FakeAuditor/FakeGrants and offline vertical SoT unchanged. No Playwright. UI stays Vitest. Iface pin unchanged
+- Runbook: [`docs/testing-harden-v0.md`](testing-harden-v0.md)
 
 ## Slice 5 exit (landed)
 

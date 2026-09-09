@@ -34,5 +34,7 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 markers = [
     "plane_mocked: optional plane-mocked synthetic (default off; pytest -m plane_mocked)",
+    "live_cottage: optional cottage offline-contain smoke (default off; AIMMUNE_LIVE_COTTAGE=1)",
+    "plane_staging: optional live plane site-token E2E (default off; PANOPTICON_BASE_URL+HM_SITE_TOKEN+SITE_ID)",
 ]
-addopts = ["-m", "not plane_mocked"]
+addopts = ["-m", "not live_cottage and not plane_staging and not plane_mocked"]
