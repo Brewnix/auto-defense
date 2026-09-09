@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { PRINCIPAL_COOKIE } from "@/lib/auth";
-import { NONCE_COOKIE, signSiweSession, verifySiweLogin } from "@/lib/siwe";
+import {
+  NONCE_COOKIE,
+  readSiweSession,
+  signSiweSession,
+  siweSessionTtlS,
+  verifySiweLogin,
+} from "@/lib/siwe";
 
 function cookieOpts() {
   return {
@@ -33,16 +39,19 @@ export async function POST(request: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "could not mint siwe session" }, { status: 503 });
   }
+  const minted = readSiweSession(session);
 
   const response = NextResponse.json({
     ok: true,
     principal: result.principal,
     source: "siwe" as const,
+    exp: minted?.exp ?? null,
   });
   response.cookies.set({
     name: PRINCIPAL_COOKIE,
     value: session,
     ...cookieOpts(),
+    maxAge: siweSessionTtlS(),
   });
   response.cookies.set({
     name: NONCE_COOKIE,

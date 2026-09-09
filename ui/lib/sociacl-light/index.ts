@@ -6,6 +6,7 @@ export type {
   DelegateGrant,
   DelegateGraph,
   HandoffHint,
+  LiveMockGrant,
   MockCheckRow,
   SiteObjectId,
 } from "./types";
@@ -37,5 +38,12 @@ export {
   validateMintAsks,
 } from "./grant-body";
 export type { PrivilegeAsk, PrivilegeGrantBody } from "./grant-body";
-export { buildAclFromEnv, getProcessAcl, resetProcessAcl } from "./store";
+export {
+  buildAclFromEnv,
+  getProcessAcl,
+  listLiveSiteGrants,
+  ownerUndelegateGrant,
+  persistAcl,
+  resetProcessAcl,
+} from "./store";
 export type { SociaclFixture } from "./store";

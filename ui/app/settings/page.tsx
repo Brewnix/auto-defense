@@ -9,7 +9,10 @@ import {
 } from "@/components/ui/card";
 import { smokePrincipalAllowed } from "@/lib/auth";
 import { loadIrSession } from "@/lib/ir";
+import { listLiveSiteGrants } from "@/lib/sociacl-light/store";
 
+import { MockGrants } from "./mock-grants";
+import { SessionStatus } from "./session-status";
 import { SiweConnect } from "./siwe-connect";
 import { TokenForm } from "./token-form";
 
@@ -24,6 +27,7 @@ export default async function SettingsPage({
   const reason = params.reason;
   const session = await loadIrSession();
   const smokeAllowed = smokePrincipalAllowed();
+  const grants = listLiveSiteGrants(session.siteId, session.now);
   return (
     <AppShell principal={session.principal}>
       <div className="flex flex-col gap-2">
@@ -73,8 +77,26 @@ export default async function SettingsPage({
             Address is the SociACL AccessorId.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-6">
+          <SessionStatus
+            source={session.source}
+            principal={session.principal}
+            exp={session.exp}
+          />
           <SiweConnect />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>MockCheck grants</CardTitle>
+          <CardDescription>
+            Live rows on <code>site:{session.siteId}</code> and{" "}
+            <code>site:{session.siteId}:ir</code>. Owner undelegate is
+            immediate — the next Check denies. Re-Check at act is unchanged.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <MockGrants grants={grants} principal={session.principal} />
         </CardContent>
       </Card>
       <Alert>

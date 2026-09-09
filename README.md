@@ -2,7 +2,7 @@
 
 **Product:** AImmune  
 **Engineering repo:** [`Brewnix/auto-defense`](https://github.com/Brewnix/auto-defense) (this repo)  
-**Status:** **slice 8 + SIWE v0 + testing harden v0** — SociACL IR UX (MockCheck) plus EIP-4361 cottage session; opt-in live cottage / plane staging tracks. See [`docs/slice-8-sociacl-ir.md`](docs/slice-8-sociacl-ir.md), [`docs/siwe-v0.md`](docs/siwe-v0.md), and [`docs/testing-harden-v0.md`](docs/testing-harden-v0.md).  
+**Status:** **slice 8 + SIWE v0 + testing harden v0** — SociACL IR UX (MockCheck) plus EIP-4361 cottage session (v2 TTL + durable MockCheck); opt-in live cottage / plane staging tracks. See [`docs/slice-8-sociacl-ir.md`](docs/slice-8-sociacl-ir.md), [`docs/siwe-v0.md`](docs/siwe-v0.md), [`docs/siwe-mockcheck-durability-v0.md`](docs/siwe-mockcheck-durability-v0.md), and [`docs/testing-harden-v0.md`](docs/testing-harden-v0.md).  
 **License:** [MIT](LICENSE)  
 **Contracts:** pin [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208) in [`vendor/inference-iface`](vendor/inference-iface). Do **not** fork or weaken those locks here.  
 **SociACL consume (copy / re-type, master — not the PR branch):** [`docs/aimmune-ir-check.d.ts`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.d.ts) (`4218cd4022b452d6329007a37b39ee16457facf4`) · [`docs/aimmune-ir-check.md`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.md) (`38fb1a5b20c05f429af5283f95226d2360aee2c8`). Landed via [SociACL #14](https://github.com/FyberLabs/SociACL/pull/14). Do not `npm install sociacl`.  

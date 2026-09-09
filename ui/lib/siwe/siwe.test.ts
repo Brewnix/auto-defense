@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { privateKeyToAccount } from "viem/accounts";
@@ -5,14 +6,14 @@ import { createSiweMessage } from "viem/siwe";
 
 import { GET as getNonce } from "@/app/api/siwe/nonce/route";
 import { POST as postVerify } from "@/app/api/siwe/verify/route";
-import { POST as postSession } from "@/app/api/session/route";
+import { DELETE as deleteSession, POST as postSession } from "@/app/api/session/route";
 import { resolvePrincipal } from "@/lib/auth";
 import { checkIrAct } from "@/lib/sociacl-light/gate";
 import { irObject } from "@/lib/sociacl-light/objects";
 import { MockCheck } from "@/lib/sociacl-light/mock-check";
 
 import { NONCE_COOKIE, resetNonceStore, siweNoncePayload } from "./index";
-import { signSiweSession } from "./session";
+import { readSiweSession, signSiweSession, siweSessionTtlS } from "./session";
 import { verifySiweLogin } from "./verify";
 
 const ANVIL_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
@@ -114,6 +115,9 @@ describe("SIWE v0", () => {
     expect(ACCOUNT.address).not.toBe(OWNER);
     expect(setCookieHasHttpOnly(verifyRes, "aimmune_principal")).toBe(true);
     const session = cookieFrom(verifyRes, "aimmune_principal");
+    expect(session?.startsWith("v2.")).toBe(true);
+    const minted = readSiweSession(session);
+    expect(minted?.exp).toBeGreaterThan(Math.floor(Date.now() / 1000));
     const resolved = resolvePrincipal({ cookie: session, tokenOk: true });
     expect(resolved).toEqual({ principal: OWNER, source: "siwe" });
   });
@@ -189,5 +193,49 @@ describe("SIWE v0", () => {
     expect(checkIrAct(acl, SITE, principal, "annotate", 1_778_000_000, [OWNER]).allowed).toBe(
       true,
     );
+  });
+
+  it("denies an expired v2 cookie (logged out, not SIWE)", () => {
+    vi.stubEnv("AIMMUNE_SIWE_TTL_S", "60");
+    const cookie = signSiweSession(ACCOUNT.address, "test-token", 1_700_000_000);
+    expect(cookie?.startsWith("v2.")).toBe(true);
+    expect(readSiweSession(cookie, "test-token", 1_700_000_060)).toBeNull();
+    expect(resolvePrincipal({ cookie, tokenOk: true }).source).toBeNull();
+    expect(resolvePrincipal({ cookie, tokenOk: true }).principal).toBeNull();
+  });
+
+  it("still reads an unexpired-less v1 cookie during the upgrade", () => {
+    const mac = createHmac("sha256", "test-token")
+      .update(`aimmune-siwe-v1:${OWNER}`)
+      .digest("hex");
+    const cookie = `v1.${OWNER}.${mac}`;
+    expect(resolvePrincipal({ cookie, tokenOk: true })).toEqual({
+      principal: OWNER,
+      source: "siwe",
+    });
+  });
+
+  it("mints only v2 with default 12h TTL and keeps verify EOA-only", async () => {
+    expect(siweSessionTtlS()).toBe(43_200);
+    const cookie = signSiweSession(ACCOUNT.address);
+    expect(cookie?.split(".")).toHaveLength(4);
+    expect(cookie?.startsWith("v2.")).toBe(true);
+    const { fields, message } = await signedMessage();
+    const result = await verifySiweLogin({
+      message,
+      signature: await ACCOUNT.signMessage({ message }),
+      cookieNonce: fields.nonce,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.principal).toBe(OWNER);
+    }
+  });
+
+  it("DELETE /api/session clears the SIWE principal cookie", async () => {
+    const response = await deleteSession();
+    expect(response.status).toBe(200);
+    const cleared = cookieFrom(response, "aimmune_principal");
+    expect(cleared).toBe("");
   });
 });

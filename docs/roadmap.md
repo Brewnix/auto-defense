@@ -25,7 +25,7 @@ Then package as one site daemon.
 |-------|------|------|
 | **6** | **done** | Model triage (`actor.kind: model`, local-only cottage v0). LLM judges; policy executes. [`docs/slice-6-model-triage.md`](slice-6-model-triage.md). |
 | **7** | **done** | Privilege grant site client (`#50`). Plane mint / site cache / home offline mint. [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md). |
-| **8** | **done** | SociACL IR UX (`Check` / `delegate` for human resolve / mint). Dual auth with `hm_site_`. [`docs/slice-8-sociacl-ir.md`](slice-8-sociacl-ir.md). SIWE v0: [`docs/siwe-v0.md`](siwe-v0.md). |
+| **8** | **done** | SociACL IR UX (`Check` / `delegate` for human resolve / mint). Dual auth with `hm_site_`. [`docs/slice-8-sociacl-ir.md`](slice-8-sociacl-ir.md). SIWE v0: [`docs/siwe-v0.md`](siwe-v0.md). Durability (TTL + durable ACL): [`docs/siwe-mockcheck-durability-v0.md`](siwe-mockcheck-durability-v0.md). |
 | **9** | **done** | Package: one site daemon + host wiring runbook (no image bake). [`docs/slice-9-package.md`](slice-9-package.md). |
 
 Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 3. Slice 8 stays off the critical path until grants exist. Slice 6 is judge-only; slice 7 mints / caches grants.
@@ -131,10 +131,10 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 
 - `GET /api/siwe/nonce` + `POST /api/siwe/verify` with viem (`verifyMessage`). EOA only.
 - Settings Connect uses injected `window.ethereum` (`personal_sign`). No WalletConnect / Wagmi.
-- Signed httpOnly `aimmune_principal` (`v1.<addr>.<hmac>`). `source: "siwe"` only after verify.
+- Signed httpOnly `aimmune_principal` (`v2.<addr>.<exp>.<hmac>`; leftover `v1` still read). `source: "siwe"` only after verify. TTL `AIMMUNE_SIWE_TTL_S` default 12h. Prefer `AIMMUNE_SIWE_SECRET` (UI-token HMAC is transitional).
 - Paste-principal / `POST /api/session` `{ principal }` is smoke-only; production fails closed unless `AIMMUNE_UI_ALLOW_SMOKE_PRINCIPAL=1`.
 - Env: `AIMMUNE_SIWE_DOMAIN` (loopback default), statement binds `site:{SITE_ID}`, optional `AIMMUNE_SIWE_CHAIN_ID`.
-- MockCheck / `requireIrAct` unchanged. Iface pin unchanged. [`docs/siwe-v0.md`](siwe-v0.md).
+- MockCheck / `requireIrAct` unchanged at act. Durable `$AIMMUNE_STATE_DIR/sociacl-mock.json` (0600); fixture seeds only when empty. Owner `POST /api/sociacl/undelegate`. [`docs/siwe-v0.md`](siwe-v0.md) · [`docs/siwe-mockcheck-durability-v0.md`](siwe-mockcheck-durability-v0.md).
 
 ## Synthetics v0 + host-install smoke (landed)
 
@@ -145,7 +145,14 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Optional UI path on cottage: SIWE Connect (landed) or smoke principal — [`docs/siwe-v0.md`](siwe-v0.md)
 - Runbook: [`docs/synthetics-v0.md`](synthetics-v0.md) · [`docs/host-install-smoke.md`](host-install-smoke.md) · [`docs/usb-layout.md`](usb-layout.md)
 
-## Testing harden v0 (this cut)
+## SIWE / MockCheck durability v0 (this cut)
+
+- Cookie `v2.<addr>.<exp>.<hmac>`; expired → logged out. Settings source / expiry / Sign out
+- Durable MockCheck at `$AIMMUNE_STATE_DIR/sociacl-mock.json` (0600). Fixture does not wipe a populated store
+- Owner undelegate API + Settings grant list. Re-Check at act unchanged. Iface pin unchanged
+- Runbook: [`docs/siwe-mockcheck-durability-v0.md`](siwe-mockcheck-durability-v0.md)
+
+## Testing harden v0 (landed)
 
 - Two **default-off** markers: `live_cottage` (cottage install path → offline contain, `AIMMUNE_EXEC_MOCK=1`) and `plane_staging` (live WireGuard site-token **safe** subset + deny resolve/revoke). Neither folds into unmarked `pytest -q` / PR pytest
 - Script: [`scripts/smoke-cottage-offline.sh`](../scripts/smoke-cottage-offline.sh). Optional `workflow_dispatch` only — [`.github/workflows/testing-harden-optional.yml`](../.github/workflows/testing-harden-optional.yml). Secrets missing → skip, not fail

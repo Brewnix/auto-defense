@@ -130,7 +130,7 @@ sudo systemctl enable --now aimmune-ui.service
 
 Optional UI path is **SIWE or smoke principal** — both are on main ([`docs/siwe-v0.md`](siwe-v0.md)):
 
-- **SIWE (production human door):** Settings **Connect wallet** (injected `window.ethereum`) → `GET /api/siwe/nonce` + `POST /api/siwe/verify` → signed httpOnly `aimmune_principal` (`v1.<addr>.<hmac>`). `resolvePrincipal` source `"siwe"` only after verify. Set `AIMMUNE_SIWE_DOMAIN` (loopback default), `AIMMUNE_OWNER_PRINCIPALS`, and keep `AIMMUNE_UI_TOKEN`.
+- **SIWE (production human door):** Settings **Connect wallet** (injected `window.ethereum`) → `GET /api/siwe/nonce` + `POST /api/siwe/verify` → signed httpOnly `aimmune_principal` (`v2.<addr>.<exp>.<hmac>`). `resolvePrincipal` source `"siwe"` only after verify. Set `AIMMUNE_SIWE_DOMAIN` (loopback default), `AIMMUNE_OWNER_PRINCIPALS`, optional `AIMMUNE_SIWE_SECRET` / `AIMMUNE_SIWE_TTL_S`, and keep `AIMMUNE_UI_TOKEN`. Durability: [`docs/siwe-mockcheck-durability-v0.md`](siwe-mockcheck-durability-v0.md).
 - **Smoke (loopback, no wallet):** `AIMMUNE_OWNER_PRINCIPALS` + `AIMMUNE_UI_SMOKE_PRINCIPAL`. `POST /api/session` `{ principal }` is smoke-only; production fails closed unless `AIMMUNE_UI_ALLOW_SMOKE_PRINCIPAL=1`. Source is `"smoke"`, never `"siwe"`.
 
 MockCheck / `requireIrAct` are unchanged ([`docs/slice-8-sociacl-ir.md`](slice-8-sociacl-ir.md)). UI tests stay Vitest. The offline synthetic does **not** require a wallet.
