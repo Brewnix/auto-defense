@@ -170,6 +170,10 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
 - Runbook: [`docs/packaging-v0.md`](packaging-v0.md)
 
+## Soft Soft testable cottage v0 (Product)
+
+Product Soft Soft of what is already testable on `main` (offline vertical SoT, MockEngine CI, cottage offline smoke, packaging matrix). Does not reopen slice / packaging / synthetics / testing-harden locks. Does not claim Research productization deploy or Hypermesh lease. [`docs/soft-soft-aimmune-testable-v0.md`](soft-soft-aimmune-testable-v0.md).
+
 ## Slice 5 exit (landed)
 
 - `aimmune.ui.status` — display enums; never blocked from resolve alone
