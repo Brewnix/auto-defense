@@ -108,7 +108,7 @@ def test_plane_staging_site_token_safe_subset() -> None:
                 "severity": "high",
                 "text_redacted": "plane staging e2e v0 — site-token safe subset",
                 "display": {
-                    "tool": "notify.operator",
+                    "tool": "firewall.block_ip",
                     "subject": {"kind": "ip", "value": "203.0.113.80"},
                     "ttl_s": 3600,
                 },
@@ -167,7 +167,7 @@ def test_plane_staging_site_token_safe_subset() -> None:
                 raw.post(
                     f"{GRANTS}/{grant_id}/resolve",
                     json={
-                        "resolution": "denied",
+                        "outcome": "denied",
                         "resolved_by": "aimmune-plane-staging-e2e",
                     },
                 ),
