@@ -69,7 +69,13 @@ class GrantClient:
         headers = {}
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key
-        payload = self._request("POST", GRANTS_PATH, json=body, headers=headers)
+        # Plane PrivilegeGrantCreate is extra=forbid; omit resource-only fields.
+        create_body = {
+            k: v
+            for k, v in body.items()
+            if k not in {"status", "resolution", "active_until", "grant_id", "integrity"}
+        }
+        payload = self._request("POST", GRANTS_PATH, json=create_body, headers=headers)
         if not isinstance(payload, dict):
             raise GrantError("grant propose unexpected body")
         return payload
