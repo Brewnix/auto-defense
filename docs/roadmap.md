@@ -174,6 +174,10 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 
 Product Soft Soft of what is already testable on `main` (offline vertical SoT, MockEngine CI, cottage offline smoke, packaging matrix). Does not reopen slice / packaging / synthetics / testing-harden locks. Does not claim Research productization deploy or Hypermesh lease. [`docs/soft-soft-aimmune-testable-v0.md`](soft-soft-aimmune-testable-v0.md).
 
+## Soft Soft plane_staging v0 (Product)
+
+Separate Soft Soft from the offline/MockEngine cottage cut. Live WireGuard site-token **safe** subset (`pytest -q -m plane_staging`) from a WG-reachable cottage or operator box. GitHub-hosted `ubuntu-latest` dispatch is **not** Soft Soft evidence. Does not claim secrets exist, field deploy, or Hypermesh lease. [`docs/soft-soft-aimmune-plane-staging-v0.md`](soft-soft-aimmune-plane-staging-v0.md).
+
 ## Slice 5 exit (landed)
 
 - `aimmune.ui.status` — display enums; never blocked from resolve alone
