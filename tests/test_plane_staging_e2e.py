@@ -174,7 +174,7 @@ def test_plane_staging_site_token_safe_subset() -> None:
                 path=f"POST {GRANTS}/{{id}}/resolve",
             )
             _assert_denied(
-                raw.post(f"{GRANTS}/{grant_id}/revoke", json={}),
+                raw.post(f"{GRANTS}/{grant_id}/revoke", json={"resolved_by": "aimmune-plane-staging-e2e"}),
                 path=f"POST {GRANTS}/{{id}}/revoke",
             )
         finally:
