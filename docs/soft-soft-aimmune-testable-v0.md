@@ -85,7 +85,7 @@ Follow-on or other owners. **Not this Greenlight.**
 
 | HOLD | Why it is not this Greenlight |
 |------|------------------------------|
-| Live Eve / real `alias_util` contain | Testing-harden follow-on citing the Brewnix gateway. v0 smoke is `AIMMUNE_EXEC_MOCK=1`. [`docs/testing-harden-v0.md`](testing-harden-v0.md) |
+| Live Eve / real `alias_util` contain | Deferred to Greenlight [`docs/greenlight-aimmune-live-eve-contain-v0.md`](greenlight-aimmune-live-eve-contain-v0.md). v0 smoke stays `AIMMUNE_EXEC_MOCK=1`. [`docs/testing-harden-v0.md`](testing-harden-v0.md) |
 | `plane_staging` live WireGuard | Needs secrets + a cottage on the overlay. Greenlight later when Research / productization deploy **and** secrets exist. Default-off; skip if unset. |
 | Live Ollama judge on cottage | Optional adapter exists; skipped when unreachable. Greenlight requires MockEngine in CI only. [`docs/slice-6-model-triage.md`](slice-6-model-triage.md) |
 | Productization deploy / field install at scale | **Research lane.** This repo ships pip + systemd + adapters + runbooks. Do not claim field rollout. |
@@ -102,4 +102,4 @@ Product may Greenlight when **all** of the following are true:
 2. **This doc matches `main`** — no claim of live Eve contain, live WireGuard staging, live Ollama, field deploy, or Hypermesh lease. Locks stay in the cited design docs.
 3. **Greenlight is Product’s.** Sign-off only after Greenlight **and** the Chris merge path. Do not treat this PR as Sign-off.
 
-After Greenlight + Sign-off, the testable cottage v0 definition above is the product lock. Later Greenlights (live contain, plane staging, Research deploy) are new documents — do not silently expand this one.
+After Greenlight + Sign-off, the testable cottage v0 definition above is the product lock. Live Eve / real `alias_util` contain is deferred to [`docs/greenlight-aimmune-live-eve-contain-v0.md`](greenlight-aimmune-live-eve-contain-v0.md). Do not silently expand this document.

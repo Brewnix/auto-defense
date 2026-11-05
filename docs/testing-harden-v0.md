@@ -13,7 +13,7 @@ Two **default-off** pytest markers plus a CI-less cottage script. Neither track 
 | | Rule |
 |---|------|
 | A | Two markers + this doc: `live_cottage` and `plane_staging` (both **default-off**). Do **not** fold either into unmarked `pytest -q` / existing CI pytest job. |
-| B | **Live cottage v0** scripts the [host-install checklist](host-install-smoke.md) through **offline contain**: install path → perms notes → env → service/status where practical in a CI-less script → cycle → verify-chain → `status --json` pass criteria. `AIMMUNE_EXEC_MOCK=1` is OK for v0. Live `alias_util` / real Eve is an opt-in follow-on citing the Brewnix gateway — not this cut. |
+| B | **Live cottage v0** scripts the [host-install checklist](host-install-smoke.md) through **offline contain**: install path → perms notes → env → service/status where practical in a CI-less script → cycle → verify-chain → `status --json` pass criteria. `AIMMUNE_EXEC_MOCK=1` is OK for v0. Live `alias_util` / real Eve is an opt-in follow-on citing the Brewnix gateway — not this cut. Greenlight: [`docs/greenlight-aimmune-live-eve-contain-v0.md`](greenlight-aimmune-live-eve-contain-v0.md). |
 | C | **Plane staging E2E v0** is the site-token **safe** subset only: `site-tokens/me` → auditor create/GET → grant propose/GET → optional ack after local apply. **Assert** the site token **cannot** call resolve/revoke on tickets or grants (expect 401/403). No live `lease_stop` / preempt against rented boxes. Requires `PANOPTICON_BASE_URL`, `HM_SITE_TOKEN`, `SITE_ID`. Skip cleanly if unset. |
 | D | CI: keep current iface-pin / pytest / UI jobs unchanged for PRs. Optional `workflow_dispatch` workflow runs plane_staging / live_cottage **only when secrets present** — never fail PR CI if secrets missing. |
 | E | Keep `plane_mocked` FakeAuditor/FakeGrants and offline vertical SoT ([`docs/synthetics-v0.md`](synthetics-v0.md)) unchanged. No Playwright. UI stays Vitest. |
@@ -54,7 +54,7 @@ The script stages [`deploy/install.sh`](../deploy/install.sh) into `$AIMMUNE_COT
 | 5. Service / status | Units must exist and mention `aimmune loop` + `EnvironmentFile`. `systemctl` only if `AIMMUNE_LIVE_COTTAGE_SYSTEMD=1` on a real cottage |
 | 6. Offline contain | Restamp [synthetics fixtures](synthetics-v0.md) → `aimmune cycle` → `verify-chain` → `status --json` |
 
-Live `alias_util` / real Eve (gateway role) is a documented follow-on: point `AIMMUNE_EVE_PATH` at `/var/log/suricata/eve.json` and leave `AIMMUNE_EXEC_MOCK` unset. Cite [`usb/roles/gateway-opnsense/README.md`](../usb/roles/gateway-opnsense/README.md) — not required for this PR.
+Live `alias_util` / real Eve (gateway role) is a documented follow-on: point `AIMMUNE_EVE_PATH` at `/var/log/suricata/eve.json` and leave `AIMMUNE_EXEC_MOCK` unset. Cite [`usb/roles/gateway-opnsense/README.md`](../usb/roles/gateway-opnsense/README.md). Greenlight lock: [`docs/greenlight-aimmune-live-eve-contain-v0.md`](greenlight-aimmune-live-eve-contain-v0.md). Not required for this testing-harden cut.
 
 ### Pass criteria (`status --json`)
 
@@ -136,4 +136,4 @@ PANOPTICON_BASE_URL=… HM_SITE_TOKEN=… SITE_ID=… pytest -q -m plane_staging
 
 ## Out of scope
 
-ISO / USB bake · Tailscale · SIWE wallet in CI · Playwright · site-implemented resolve/revoke · live `lease_stop` / preempt · live `alias_util` / Eve (follow-on) · vendoring Host / OPNsense · iface pin bump · `schemas/` amend · folding these markers into unmarked `pytest -q`.
+ISO / USB bake · Tailscale · SIWE wallet in CI · Playwright · site-implemented resolve/revoke · live `lease_stop` / preempt · live `alias_util` / Eve (follow-on — [`docs/greenlight-aimmune-live-eve-contain-v0.md`](greenlight-aimmune-live-eve-contain-v0.md)) · vendoring Host / OPNsense · iface pin bump · `schemas/` amend · folding these markers into unmarked `pytest -q`.
