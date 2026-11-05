@@ -5,7 +5,7 @@
 **Status:** this slice  
 **Pin:** [`vendor/inference-iface`](../vendor/inference-iface) → [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208)  
 **Specs (source of truth — do not fork):**  
-[`hypermesh-preempt-v0.md`](../vendor/inference-iface/docs/hypermesh-preempt-v0.md) · [`docs/plane-client.md`](plane-client.md) · Panopticon [`#40`](https://github.com/FyberLabs/panopticon/pull/40) / [`#41`](https://github.com/FyberLabs/panopticon/pull/41)
+[`hypermesh-preempt-v0.md`](../vendor/inference-iface/docs/hypermesh-preempt-v0.md) · [`docs/plane-client.md`](plane-client.md) · historical `#40` / `#41` on [`hyperme-sh/hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane)
 
 Brewnix **proposes**. Host **executes**. Drain is two CP jobs sequenced here (H3) — not a Host mega-job. `preempt_mode` stays **`drain`**. Host has no hard-preempt signal; v0 never selects `hard`.
 

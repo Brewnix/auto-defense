@@ -13,8 +13,8 @@ Pressure-test package 1–10 remains locked (Chris, 2026-09-08). No policy execu
 | Dependency | How | Notes |
 |------------|-----|-------|
 | [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ `3621849bbf7c368b1d709356c465883144300208` | git submodule `vendor/inference-iface` | No fork. CI pins SHA here (lock #10). |
-| Panopticon plane | `PANOPTICON_BASE_URL` + `HM_SITE_TOKEN` + `SITE_ID` over **WireGuard** (existing host/plane path) | **Not** Tailscale (lock #2). Client only. See [`docs/plane-client.md`](plane-client.md). |
-| Host (optional plane-up) | via Panopticon site jobs | Offline: `$STATE_DIR/owner.sock` (H4). |
+| Hypermesh plane | `PANOPTICON_BASE_URL` + `HM_SITE_TOKEN` + `SITE_ID` over **WireGuard** (existing host/plane path) | **Not** Tailscale (lock #2). Client only. Live owners: [`docs/plane-client.md`](plane-client.md). `FyberLabs/panopticon` is archived (2026-11-05). |
+| Host (optional plane-up) | via Hypermesh plane site jobs (`#40`) | Offline: `$STATE_DIR/owner.sock` (H4). |
 
 ## Locked decisions (1–10)
 
@@ -31,14 +31,16 @@ Pressure-test package 1–10 remains locked (Chris, 2026-09-08). No policy execu
 | 9 | **Router `/v1/ir/chat`:** Hypermesh-only. AImmune UI does **not** consume it. |
 | 10 | **Acceptance CI:** pin iface SHA in **this** repo’s CI — do not pull Panopticon monolith. |
 
+Rows 2 and 10 keep their 2026-09-08 wording. As of the 2026-11-05 lock, `FyberLabs/panopticon` is archived and live owners are the `hyperme-sh` map in [`docs/plane-client.md`](plane-client.md). WireGuard, not Tailscale, is unchanged. Door numbers stay historical labels. This note does not claim HTTP paths moved.
+
 ## Device bind runbook (plane)
 
 Operator bind **once**. The site daemon never invents `Device.site_id`.
 
-1. Mint a site machine token for this `SITE_ID` (`hm_site_…`): operator `POST /api/v1/hypermesh/site-tokens` ([Panopticon #38](https://github.com/FyberLabs/panopticon/pull/38), [`site-machine-token-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/site-machine-token-v0.md)). Plaintext is shown once.
+1. Mint a site machine token for this `SITE_ID` (`hm_site_…`): operator `POST /api/v1/hypermesh/site-tokens` (historical `#38`; [`controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`api-keys-service`](https://github.com/hyperme-sh/api-keys-service); [`site-machine-token-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/site-machine-token-v0.md)). Plaintext is shown once.
 2. Store the secret as `HM_SITE_TOKEN` (0600) on the site. Set `PANOPTICON_BASE_URL` to the **WireGuard** gateway origin. Set `SITE_ID` to the same identifier (e.g. `net-tn-cottage`).
 3. Confirm `GET ${PANOPTICON_BASE_URL}/api/v1/hypermesh/site-tokens/me` with `Authorization: Bearer ${HM_SITE_TOKEN}`.
-4. Operator `POST /api/v1/hypermesh/devices` `{site_id?}` or `PATCH /api/v1/hypermesh/devices/{id}` `{site_id}` so `Device.site_id` matches the token ([#40](https://github.com/FyberLabs/panopticon/pull/40)).
+4. Operator `POST /api/v1/hypermesh/devices` `{site_id?}` or `PATCH /api/v1/hypermesh/devices/{id}` `{site_id}` so `Device.site_id` matches the token (historical `#40`; [`hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane)).
 5. Enqueue and site device GET require `device.site_id == token.site_id`. **Unbound / wrong site / cross-site id → 404** (no existence leak).
 6. Revoke via `DELETE /api/v1/hypermesh/site-tokens/{id}`. Do not reuse `hm_dev_`, `hm_rtr_`, `hm1.`, or renter / `purpose: service` keys.
 
@@ -48,10 +50,10 @@ Cite only. Do not reimplement the gateway. Paths are under `PANOPTICON_BASE_URL`
 
 | Cite | Method | Path | Auth | Role |
 |------|--------|------|------|------|
-| [#38](https://github.com/FyberLabs/panopticon/pull/38) [`site-machine-token-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/site-machine-token-v0.md) | `POST` / `GET` / `DELETE` | `/api/v1/hypermesh/site-tokens` · `GET …/site-tokens/me` | operator mint; site Bearer on `/me` | Mint / list / revoke / verify `hm_site_…` |
-| [#39](https://github.com/FyberLabs/panopticon/pull/39) [`fyber-auditor-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/fyber-auditor-v0.md) | `POST` / `GET` | `/api/v1/auditor/v0/tickets` · `…/{id}` · `…/{id}/resolve` · `…/{id}/ack` | `hm_site_…` on create / site GET / ack; plane operator on resolve | Auditor inbox. Tickets = intent. |
-| [#40](https://github.com/FyberLabs/panopticon/pull/40) [`brewnix-executor-bridge-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/brewnix-executor-bridge-v0.md) | `POST` / `GET` | `/api/v1/hypermesh/site/jobs` · `…/{job_id}` | `hm_site_…` | Enqueue + poll `lease_stop` / `sell_pause`. Host applies. |
-| [#41](https://github.com/FyberLabs/panopticon/pull/41) [`heartbeat-sell-state-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/heartbeat-sell-state-v0.md) | `GET` | `/api/v1/hypermesh/site/devices/{device_id}` | `hm_site_…` | Live last-known Host `sell_state`. Not a receipt write. |
+| `#38` [`site-machine-token-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/site-machine-token-v0.md) · [`controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`api-keys-service`](https://github.com/hyperme-sh/api-keys-service) | `POST` / `GET` / `DELETE` | `/api/v1/hypermesh/site-tokens` · `GET …/site-tokens/me` | operator mint; site Bearer on `/me` | Mint / list / revoke / verify `hm_site_…` |
+| `#39` [`fyber-auditor-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/fyber-auditor-v0.md) · [`aiuditor`](https://github.com/hyperme-sh/aiuditor) | `POST` / `GET` | `/api/v1/auditor/v0/tickets` · `…/{id}` · `…/{id}/resolve` · `…/{id}/ack` | `hm_site_…` on create / site GET / ack; plane operator on resolve | Auditor inbox. Tickets = intent. |
+| `#40` [`brewnix-executor-bridge-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/brewnix-executor-bridge-v0.md) · [`hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane) | `POST` / `GET` | `/api/v1/hypermesh/site/jobs` · `…/{job_id}` | `hm_site_…` | Enqueue + poll `lease_stop` / `sell_pause`. Host applies. |
+| `#41` [`heartbeat-sell-state-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/heartbeat-sell-state-v0.md) · [`hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane) | `GET` | `/api/v1/hypermesh/site/devices/{device_id}` | `hm_site_…` | Live last-known Host `sell_state`. Not a receipt write. |
 
 Client notes: [`docs/plane-client.md`](plane-client.md).
 

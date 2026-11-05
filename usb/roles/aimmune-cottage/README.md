@@ -15,7 +15,7 @@ Orin / Jetson: same path on JetPack Ubuntu (native systemd). Compose is not the 
 
 ## Does not own
 
-Gateway Eve / OPNsense · WireGuard · Hypermesh Host · Panopticon · secrets
+Gateway Eve / OPNsense · WireGuard · Hypermesh Host · Hypermesh plane (`hyperme-sh`) · secrets
 
 ## Install (callable)
 

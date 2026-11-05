@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Live cottage v0 — host-install checklist through offline contain.
-# AIMMUNE_EXEC_MOCK=1. No live alias_util / Eve / WireGuard / Panopticon.
+# AIMMUNE_EXEC_MOCK=1. No live alias_util / Eve / WireGuard / Hypermesh plane.
 # Not folded into unmarked pytest. See docs/testing-harden-v0.md
 #
 # Override DEST_* to write /etc + /var (real cottage). Default is a prefix

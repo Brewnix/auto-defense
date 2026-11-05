@@ -1,6 +1,6 @@
 """Plane staging E2E v0 — default-off (`pytest -m plane_staging`).
 
-Site-token **safe** subset only against a WireGuard-reachable Panopticon.
+Site-token **safe** subset only against a WireGuard-reachable Hypermesh plane (hyperme-sh/hypermesh-plane).
 Skip unless ``PANOPTICON_BASE_URL`` + ``HM_SITE_TOKEN`` + ``SITE_ID`` are set.
 Assert the site token cannot resolve/revoke tickets or grants (401/403).
 No live ``lease_stop`` / preempt. No tokens written to the repo.

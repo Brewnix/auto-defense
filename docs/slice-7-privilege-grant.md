@@ -5,9 +5,9 @@
 **Status:** this slice  
 **Pin:** [`vendor/inference-iface`](../vendor/inference-iface) → [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) @ [`3621849bbf7c368b1d709356c465883144300208`](https://github.com/Brewnix/inference-iface/commit/3621849bbf7c368b1d709356c465883144300208)  
 **Specs (source of truth — do not fork):**  
-[`privilege-grant-v0.md`](../vendor/inference-iface/docs/privilege-grant-v0.md) · plane integrator: [Panopticon privilege-grant-v0](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/privilege-grant-v0.md) · [`fyber-auditor-api-v0.md`](../vendor/inference-iface/docs/fyber-auditor-api-v0.md) · [`incident-binding-v0.md`](../vendor/inference-iface/docs/incident-binding-v0.md)
+[`privilege-grant-v0.md`](../vendor/inference-iface/docs/privilege-grant-v0.md) · plane integrator: [`privilege-grant-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/privilege-grant-v0.md) on [`hyperme-sh/hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane) · live owner [`hyperme-sh/acl-service`](https://github.com/hyperme-sh/acl-service) (+ [`hyperme-sh/controlplane-tenancy`](https://github.com/hyperme-sh/controlplane-tenancy) for tenant membership) · [`fyber-auditor-api-v0.md`](../vendor/inference-iface/docs/fyber-auditor-api-v0.md) · [`incident-binding-v0.md`](../vendor/inference-iface/docs/incident-binding-v0.md)
 
-Site client for Panopticon **#50** (`/api/v1/grants/v0/grants`). Automations propose. A human (or home owner, plane-down) mints. Policy hot-reloads `allow_model_execute` / catalogs / tier / budget from the **active grant**. The LLM never executes and is never `resolved_by`.
+Site client for historical **#50** (`/api/v1/grants/v0/grants`). Automations propose. A human (or home owner, plane-down) mints. Policy hot-reloads `allow_model_execute` / catalogs / tier / budget from the **active grant**. The LLM never executes and is never `resolved_by`. This citation does not claim the path moved.
 
 **Iface pin is not bumped.** `schemas/` are not amended.
 

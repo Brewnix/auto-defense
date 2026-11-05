@@ -12,7 +12,7 @@ One composed pytest is the offline vertical source of truth. It does **not** rep
 
 | | Rule |
 |---|------|
-| A | **Offline vertical SoT.** `plane_reachable=false` + `AIMMUNE_EXEC_MOCK=1` → Eve burst → rules **contain** (`port_scan_burst`) **and** **hold** (`ssh_brute`) → verify receipt chain → local resolve → `grant mint-local` → `status --json`. No live Suricata / OPNsense / WireGuard / Panopticon. |
+| A | **Offline vertical SoT.** `plane_reachable=false` + `AIMMUNE_EXEC_MOCK=1` → Eve burst → rules **contain** (`port_scan_burst`) **and** **hold** (`ssh_brute`) → verify receipt chain → local resolve → `grant mint-local` → `status --json`. No live Suricata / OPNsense / WireGuard / Hypermesh plane. |
 | B | **Compose existing fixtures only.** [`tests/conftest.py`](../tests/conftest.py) bursts, `tmp_state` + `MockAliasStore`. `FakeAuditor` / `FakeGrants` only on the default-off plane-mocked marker. Default is **rules-only** — do not attach a second mock triage stack. |
 | C | **Files.** This doc · [`tests/test_synthetic_vertical_offline.py`](../tests/test_synthetic_vertical_offline.py) · [`tests/fixtures/eve_ssh_brute.jsonl`](../tests/fixtures/eve_ssh_brute.jsonl) · [`tests/fixtures/synthetic_vertical/env.offline.sh`](../tests/fixtures/synthetic_vertical/env.offline.sh). Optional: [`scripts/run-synthetics-offline.sh`](../scripts/run-synthetics-offline.sh) · [`tests/test_synthetic_vertical_plane_mocked.py`](../tests/test_synthetic_vertical_plane_mocked.py) (`@pytest.mark.plane_mocked`, default off). |
 | D | UI stays Vitest. No Playwright. No SIWE wallet round-trip in this suite (cottage SIWE is the optional host-install UI path). |
@@ -75,7 +75,7 @@ python -m aimmune status --json
 pytest -q -m plane_mocked
 ```
 
-Default `addopts` is `-m "not plane_mocked"` so CI `pytest -q` skips it. No httpx against a live Panopticon.
+Default `addopts` is `-m "not plane_mocked"` so CI `pytest -q` skips it. No httpx against a live Hypermesh plane.
 
 ## CI
 

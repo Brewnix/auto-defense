@@ -9,7 +9,7 @@
 Landed on master via [SociACL #14](https://github.com/FyberLabs/SociACL/pull/14). Pin these master blobs — not the PR branch. Do not `npm install sociacl`. No crate / NAPI / WASM.  
 **Binding:** [`sociacl-ir-binding-v0.md`](https://github.com/Brewnix/inference-iface/blob/main/docs/sociacl-ir-binding-v0.md) (do not fork)
 
-Site UI + home-offline human acts. MockCheck-first. Do **not** `npm install sociacl`. No Rust / NAPI / WASM on the Next light path. Do **not** block on Panopticon adopting SociACL for plane resolve.
+Site UI + home-offline human acts. MockCheck-first. Do **not** `npm install sociacl`. No Rust / NAPI / WASM on the Next light path. Do **not** block on the Hypermesh plane adopting SociACL for plane resolve.
 
 ## Locked design (Chris 2026-09-08)
 
@@ -65,7 +65,7 @@ Dual grant SoT (slice 7 + this Check gate):
 
 ## Documented gap
 
-Auditor and grant **`POST …/resolve` on the plane remain plane JWT**. Panopticon has not adopted SociACL for plane resolve. This PR does not implement site-side plane resolve and does not wait on that adoption.
+Auditor and grant **`POST …/resolve` on the plane remain plane JWT**. The Hypermesh plane has not adopted SociACL for plane resolve. This PR does not implement site-side plane resolve and does not wait on that adoption.
 
 ## Environment
 

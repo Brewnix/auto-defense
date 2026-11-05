@@ -1,4 +1,4 @@
-"""Panopticon #40 site jobs client — enqueue + poll. Enqueue ≠ apply."""
+"""Historical #40 site jobs client (live owner hyperme-sh/hypermesh-plane) — enqueue + poll. Enqueue ≠ apply."""
 
 from __future__ import annotations
 

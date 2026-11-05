@@ -27,8 +27,10 @@ Cite (do not fork their locks):
 | Doc | What it already locks |
 |-----|------------------------|
 | [`docs/testing-harden-v0.md`](testing-harden-v0.md) | Default-off `plane_staging`; site-token **safe** subset; pass criteria; skip if secrets unset |
-| [`docs/plane-client.md`](plane-client.md) | WireGuard-only reach; `PANOPTICON_BASE_URL` / `HM_SITE_TOKEN` / `SITE_ID`; auditor + grants doors; no Tailscale |
+| [`docs/plane-client.md`](plane-client.md) | WireGuard-only reach; `PANOPTICON_BASE_URL` / `HM_SITE_TOKEN` / `SITE_ID`; auditor + grants doors; no Tailscale; `hyperme-sh` owner map |
 | [`docs/soft-soft-aimmune-testable-v0.md`](soft-soft-aimmune-testable-v0.md) | **Separate** Soft Soft: unmarked offline vertical SoT + MockEngine CI + cottage offline smoke. Already merged via [#16](https://github.com/Brewnix/auto-defense/pull/16). |
+
+Plane owner citation (Chris lock 2026-11-05): `FyberLabs/panopticon` is archived. Staging evidence cites [`hyperme-sh/hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane). Companions: [`hyperme-sh/hypermesh-gateway`](https://github.com/hyperme-sh/hypermesh-gateway), [`hyperme-sh/hypermesh-ticket`](https://github.com/hyperme-sh/hypermesh-ticket). Site-token `#38`: [`hyperme-sh/controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`hyperme-sh/api-keys-service`](https://github.com/hyperme-sh/api-keys-service). Auditor `#39`: [`hyperme-sh/aiuditor`](https://github.com/hyperme-sh/aiuditor). Grants `#50`: [`hyperme-sh/acl-service`](https://github.com/hyperme-sh/acl-service) (+ [`hyperme-sh/controlplane-tenancy`](https://github.com/hyperme-sh/controlplane-tenancy) for tenant membership). Product locks: [`hyperme-sh/hypermesh-docs`](https://github.com/hyperme-sh/hypermesh-docs). Public plane templates: [`hyperme-sh/spanopticon`](https://github.com/hyperme-sh/spanopticon). Door numbers stay historical labels. `PANOPTICON_BASE_URL` and the example origin below stay. This Soft Soft does **not** claim those HTTP paths already moved, or that AGX `plane_staging` was re-run against `hyperme-sh`.
 
 Also already on that tip (cite only): [`docs/roadmap.md`](roadmap.md) · [`docs/synthetics-v0.md`](synthetics-v0.md) · [`docs/slice-2-auditor.md`](slice-2-auditor.md) · [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md).
 
@@ -78,7 +80,7 @@ This document does **not** claim those secrets exist, that a cottage is online, 
 
 | Surface | What it is | Soft Soft? |
 |---------|------------|------------|
-| Operator / cottage (or other box on the WG overlay) | `pytest -q -m plane_staging` with the three env vars against a WireGuard-reachable Panopticon | **Yes** — this is Soft Soft evidence |
+| Operator / cottage (or other box on the WG overlay) | `pytest -q -m plane_staging` with the three env vars against a WireGuard-reachable Hypermesh plane ([`hyperme-sh/hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane)) | **Yes** — this is Soft Soft evidence |
 | Future WG self-hosted runner | Same pytest, if/when a runner sits on the overlay | **Yes**, if it actually reaches the plane over WireGuard |
 | GitHub-hosted `ubuntu-latest` dispatch | Optional; skip-ok if secrets missing | **No** — skip is not a Soft Soft pass. Even a green dispatch on `ubuntu-latest` does not prove WireGuard overlay reach |
 

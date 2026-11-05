@@ -134,8 +134,8 @@ Pointers only. This repo does not bake OPNsense, Suricata, WireGuard, or Hyperme
 |------|--------|-----------|
 | Suricata `eve.json` | Host / OPNsense image — typically `/var/log/suricata/eve.json`. Image: [`Brewnix/proxmox-firewall`](https://github.com/Brewnix/proxmox-firewall) | `AIMMUNE_EVE_PATH` — [`docs/slice-1-zero-llm.md`](slice-1-zero-llm.md) |
 | `ai_autoblock` + `alias_util` add/delete | OPNsense API (or `AIMMUNE_EXEC_MOCK=1` in lab) | [`aimmune.exec.opnsense_alias`](../src/aimmune/exec/opnsense_alias.py) |
-| WireGuard overlay | Existing Panopticon / host path. **Not Tailscale.** | [`docs/plane-client.md`](plane-client.md) |
-| `HM_SITE_TOKEN` mint | Operator `POST /api/v1/hypermesh/site-tokens` ([Panopticon #38](https://github.com/FyberLabs/panopticon/pull/38)) | Store in `aimmune.env` **0600**. Confirm `GET …/site-tokens/me` |
+| WireGuard overlay | Existing Hypermesh plane / host path. **Not Tailscale.** | [`docs/plane-client.md`](plane-client.md) |
+| `HM_SITE_TOKEN` mint | Operator `POST /api/v1/hypermesh/site-tokens` (historical `#38`; [`controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`api-keys-service`](https://github.com/hyperme-sh/api-keys-service)) | Store in `aimmune.env` **0600**. Confirm `GET …/site-tokens/me` |
 | `Device.site_id` bind | Operator once (`POST`/`PATCH`). Daemon does not auto-bind | [`docs/slice-0-inventory.md`](slice-0-inventory.md#device-bind-runbook-plane) |
 | H4 `owner.sock` | [`FyberLabs/hypermesh-host`](https://github.com/FyberLabs/hypermesh-host) `$STATE_DIR/owner.sock` + `owner.token` **0600** | `AIMMUNE_HOST_STATE_DIR` / `HYPERMESH_STATE_DIR` — [`docs/slice-4-preempt.md`](slice-4-preempt.md) |
 | Grants / auditor | Cycle-end poll; resolve is plane-only | [`docs/slice-7-privilege-grant.md`](slice-7-privilege-grant.md) · [`docs/slice-2-auditor.md`](slice-2-auditor.md) |
@@ -164,4 +164,4 @@ Full list lives in [`deploy/aimmune.env.example`](../deploy/aimmune.env.example)
 
 ## Out of scope
 
-Tailscale · public UI default · Panopticon in this package · IR chat · baking OPNsense/Host into this repo · `.deb`/`.rpm` · Compose-primary · notarized Mac app · waiting on SociACL · k8s · Playwright · SaaS telemetry · embedding Next in Python · iface pin change · `schemas/` amend. Platform matrix: [`docs/packaging-v0.md`](packaging-v0.md).
+Tailscale · public UI default · Hypermesh plane services in this package · IR chat · baking OPNsense/Host into this repo · `.deb`/`.rpm` · Compose-primary · notarized Mac app · waiting on SociACL · k8s · Playwright · SaaS telemetry · embedding Next in Python · iface pin change · `schemas/` amend. Platform matrix: [`docs/packaging-v0.md`](packaging-v0.md).

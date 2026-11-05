@@ -8,7 +8,7 @@
 **SociACL consume (copy / re-type, master — not the PR branch):** [`docs/aimmune-ir-check.d.ts`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.d.ts) (`4218cd4022b452d6329007a37b39ee16457facf4`) · [`docs/aimmune-ir-check.md`](https://github.com/FyberLabs/SociACL/blob/master/docs/aimmune-ir-check.md) (`38fb1a5b20c05f429af5283f95226d2360aee2c8`). Landed via [SociACL #14](https://github.com/FyberLabs/SociACL/pull/14). Do not `npm install sociacl`.  
 **CI:** [iface pin](.github/workflows/iface-pin.yml) — checkout with submodules; fail if pin missing; validate `schemas/*.v0.json` + examples.
 
-Site-local sense → decide → act → receipt. Policy + typed actuators execute. The LLM judges only. Offline-first when Panopticon is unreachable.
+Site-local sense → decide → act → receipt. Policy + typed actuators execute. The LLM judges only. Offline-first when the Hypermesh plane is unreachable.
 
 > Supersedes the short-lived [`Brewnix/site-defense`](https://github.com/Brewnix/site-defense) scaffold (same intent; renamed).
 
@@ -27,11 +27,11 @@ git submodule update --init --recursive
 | Locked schemas / policy docs | Pin / submodule [`vendor/inference-iface`](vendor/inference-iface) | [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) |
 | Site policy executor + receipt chain | **Here** (slice 1) | — |
 | OPNsense / Suricata actuators | **Here** (slice 1) | Host image: [`Brewnix/proxmox-firewall`](https://github.com/Brewnix/proxmox-firewall) |
-| `notify.operator` → fyber.auditor client | **Here** (slice 2) | Plane: Panopticon `#39` — intent ≠ actuation |
-| Hypermesh preempt client + H3 drain | **Here** (slice 4) — [`docs/slice-4-preempt.md`](docs/slice-4-preempt.md) | Host H1–H4; plane `#40` / `#41` |
+| `notify.operator` → fyber.auditor client | **Here** (slice 2) | Plane: [`hyperme-sh/aiuditor`](https://github.com/hyperme-sh/aiuditor) `#39` — intent ≠ actuation |
+| Hypermesh preempt client + H3 drain | **Here** (slice 4) — [`docs/slice-4-preempt.md`](docs/slice-4-preempt.md) | Host H1–H4; plane `#40` / `#41` on [`hyperme-sh/hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane) |
 | AImmune UI (digests / tickets / posture) | **Here** (slice 5) — [`docs/slice-5-ui.md`](docs/slice-5-ui.md) · [`ui/`](ui/) | — |
-| Privilege grant site client | **Here** (slice 7) — [`docs/slice-7-privilege-grant.md`](docs/slice-7-privilege-grant.md) | Plane: Panopticon `#50` — resolve is plane-only |
-| Plane doors (`hm_site_`, auditor, site jobs, sell_state, grants) | Client only — [`docs/plane-client.md`](docs/plane-client.md) | [`FyberLabs/panopticon`](https://github.com/FyberLabs/panopticon) |
+| Privilege grant site client | **Here** (slice 7) — [`docs/slice-7-privilege-grant.md`](docs/slice-7-privilege-grant.md) | Plane: [`hyperme-sh/acl-service`](https://github.com/hyperme-sh/acl-service) `#50` — resolve is plane-only |
+| Plane doors (`hm_site_`, auditor, site jobs, sell_state, grants) | Client only — [`docs/plane-client.md`](docs/plane-client.md) | [`hyperme-sh/hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane) (map in that doc; `FyberLabs/panopticon` archived) |
 | Host actuators | Client / H4 owner path | [`FyberLabs/hypermesh-host`](https://github.com/FyberLabs/hypermesh-host) |
 | Cottage package (systemd + env) | **Here** (slice 9) — [`docs/slice-9-package.md`](docs/slice-9-package.md) · [`deploy/`](deploy/) | Host image bake stays in proxmox-firewall / hypermesh-host |
 | Packaging v0 (Orin / Mac / USB) | **Here** — [`docs/packaging-v0.md`](docs/packaging-v0.md) · [`packaging/homebrew/`](packaging/homebrew/) · [`usb/roles/`](usb/roles/) | Compose-primary, `.deb`/`.rpm`, ISO bake, notarized Mac app stay out |
@@ -39,11 +39,11 @@ git submodule update --init --recursive
 | Host-install smoke (doc) | **Here** — [`docs/host-install-smoke.md`](docs/host-install-smoke.md) · [`docs/usb-layout.md`](docs/usb-layout.md) | USB bake / ISO stay out |
 | Testing harden v0 | **Here** — [`docs/testing-harden-v0.md`](docs/testing-harden-v0.md) · `live_cottage` / `plane_staging` (default-off) | Live Eve / OPNsense / `lease_stop` stay out |
 
-**Not this repo:** Panopticon SaaS gateway fork, Hypermesh-router IR chat UI, `schemas/` amends, market/renter surfaces, Tailscale-as-plane-transport, `.deb`/`.rpm`.
+**Not this repo:** Hypermesh plane / gateway fork ([`hyperme-sh/hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane), [`hyperme-sh/hypermesh-gateway`](https://github.com/hyperme-sh/hypermesh-gateway); `FyberLabs/panopticon` archived), Hypermesh-router IR chat UI, `schemas/` amends, market/renter surfaces, Tailscale-as-plane-transport, `.deb`/`.rpm`.
 
 ## Locked axioms (pressure-test 2026-09-08)
 
-- Plane reach: **WireGuard** (Panopticon/host) — not Tailscale  
+- Plane reach: **WireGuard** (Hypermesh plane / host) — not Tailscale  
 - `Device.site_id`: operator bind once  
 - UI SoT: site-local; tickets are intent  
 - Vertical: UI (5) before privilege grants (7)  
@@ -82,13 +82,15 @@ pytest
 
 ## Plane doors (cite, don’t reimplement)
 
-| Door | Panopticon |
-|------|------------|
-| Site token | `#38` — `hm_site_…` |
-| fyber.auditor | `#39` — `/api/v1/auditor/v0/tickets` |
-| Site jobs | `#40` — [`brewnix-executor-bridge-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/brewnix-executor-bridge-v0.md) |
-| Live `sell_state` | `#41` — [`heartbeat-sell-state-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/heartbeat-sell-state-v0.md) |
-| Privilege grants | `#50` — `/api/v1/grants/v0/grants` (propose / get / list; resolve is plane-only) |
+Historical door numbers. Live owners are `hyperme-sh` (Chris lock 2026-11-05; `FyberLabs/panopticon` archived). Full map: [`docs/plane-client.md`](docs/plane-client.md). Paths below are the client contract; this table does not claim they moved.
+
+| Door | Owner |
+|------|-------|
+| Site token | `#38` — `hm_site_…` · [`controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`api-keys-service`](https://github.com/hyperme-sh/api-keys-service) |
+| fyber.auditor | `#39` — `/api/v1/auditor/v0/tickets` · [`aiuditor`](https://github.com/hyperme-sh/aiuditor) |
+| Site jobs | `#40` — [`brewnix-executor-bridge-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/brewnix-executor-bridge-v0.md) on [`hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane) |
+| Live `sell_state` | `#41` — [`heartbeat-sell-state-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/heartbeat-sell-state-v0.md) on [`hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane) |
+| Privilege grants | `#50` — `/api/v1/grants/v0/grants` (propose / get / list; resolve is plane-only) · [`acl-service`](https://github.com/hyperme-sh/acl-service) (+ [`controlplane-tenancy`](https://github.com/hyperme-sh/controlplane-tenancy) for tenant membership) |
 
 How AImmune will call them over WireGuard: [`docs/plane-client.md`](docs/plane-client.md) (`PANOPTICON_BASE_URL`, `HM_SITE_TOKEN`, `SITE_ID`).
 

@@ -7,7 +7,7 @@
 **Specs (source of truth — do not fork):**  
 [`notify-operator-audit-door.md`](../vendor/inference-iface/docs/notify-operator-audit-door.md) · [`fyber-auditor-api-v0.md`](../vendor/inference-iface/docs/fyber-auditor-api-v0.md) · [`docs/plane-client.md`](plane-client.md)
 
-Site drains the local notify queue to Panopticon `#39` (`POST /api/v1/auditor/v0/tickets`), polls `GET` each cycle, applies **approved / denied / timed_out / amended** on the site, writes a **child** `fyber.receipt/v0`, then `POST …/ack`. Resolve is **intent**. Actuation source of truth is the site receipt. UI must **not** claim blocked from resolve alone.
+Site drains the local notify queue to auditor door `#39` ([`hyperme-sh/aiuditor`](https://github.com/hyperme-sh/aiuditor); `POST /api/v1/auditor/v0/tickets`), polls `GET` each cycle, applies **approved / denied / timed_out / amended** on the site, writes a **child** `fyber.receipt/v0`, then `POST …/ack`. Resolve is **intent**. Actuation source of truth is the site receipt. UI must **not** claim blocked from resolve alone. The `#39` label is historical. This slice does not claim the path moved.
 
 ## Locked design (Chris 2026-09-08)
 
