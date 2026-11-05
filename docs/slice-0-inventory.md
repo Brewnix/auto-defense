@@ -37,10 +37,10 @@ Rows 2 and 10 keep their 2026-09-08 wording. As of the 2026-11-05 lock, `FyberLa
 
 Operator bind **once**. The site daemon never invents `Device.site_id`.
 
-1. Mint a site machine token for this `SITE_ID` (`hm_site_…`): operator `POST /api/v1/hypermesh/site-tokens` (historical `#38`; [`controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`api-keys-service`](https://github.com/hyperme-sh/api-keys-service); [`site-machine-token-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/site-machine-token-v0.md)). Plaintext is shown once.
+1. Mint a site machine token for this `SITE_ID` (`hm_site_…`): operator `POST /api/v1/hypermesh/site-tokens` (historical `#38`; [`controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`api-keys-service`](https://github.com/hyperme-sh/api-keys-service); doc name `site-machine-token-v0`). Plaintext is shown once.
 2. Store the secret as `HM_SITE_TOKEN` (0600) on the site. Set `PANOPTICON_BASE_URL` to the **WireGuard** gateway origin. Set `SITE_ID` to the same identifier (e.g. `net-tn-cottage`).
 3. Confirm `GET ${PANOPTICON_BASE_URL}/api/v1/hypermesh/site-tokens/me` with `Authorization: Bearer ${HM_SITE_TOKEN}`.
-4. Operator `POST /api/v1/hypermesh/devices` `{site_id?}` or `PATCH /api/v1/hypermesh/devices/{id}` `{site_id}` so `Device.site_id` matches the token (historical `#40`; [`hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane)).
+4. Operator `POST /api/v1/hypermesh/devices` `{site_id?}` or `PATCH /api/v1/hypermesh/devices/{id}` `{site_id}` so `Device.site_id` matches the token (historical `#40`; public companions [`hypermesh-gateway`](https://github.com/hyperme-sh/hypermesh-gateway) and [`hypermesh-ticket`](https://github.com/hyperme-sh/hypermesh-ticket)).
 5. Enqueue and site device GET require `device.site_id == token.site_id`. **Unbound / wrong site / cross-site id → 404** (no existence leak).
 6. Revoke via `DELETE /api/v1/hypermesh/site-tokens/{id}`. Do not reuse `hm_dev_`, `hm_rtr_`, `hm1.`, or renter / `purpose: service` keys.
 
@@ -50,10 +50,10 @@ Cite only. Do not reimplement the gateway. Paths are under `PANOPTICON_BASE_URL`
 
 | Cite | Method | Path | Auth | Role |
 |------|--------|------|------|------|
-| `#38` [`site-machine-token-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/site-machine-token-v0.md) · [`controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`api-keys-service`](https://github.com/hyperme-sh/api-keys-service) | `POST` / `GET` / `DELETE` | `/api/v1/hypermesh/site-tokens` · `GET …/site-tokens/me` | operator mint; site Bearer on `/me` | Mint / list / revoke / verify `hm_site_…` |
-| `#39` [`fyber-auditor-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/fyber-auditor-v0.md) · [`aiuditor`](https://github.com/hyperme-sh/aiuditor) | `POST` / `GET` | `/api/v1/auditor/v0/tickets` · `…/{id}` · `…/{id}/resolve` · `…/{id}/ack` | `hm_site_…` on create / site GET / ack; plane operator on resolve | Auditor inbox. Tickets = intent. |
-| `#40` [`brewnix-executor-bridge-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/brewnix-executor-bridge-v0.md) · [`hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane) | `POST` / `GET` | `/api/v1/hypermesh/site/jobs` · `…/{job_id}` | `hm_site_…` | Enqueue + poll `lease_stop` / `sell_pause`. Host applies. |
-| `#41` [`heartbeat-sell-state-v0`](https://github.com/hyperme-sh/hypermesh-plane/blob/main/products/hypermesh/docs/heartbeat-sell-state-v0.md) · [`hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane) | `GET` | `/api/v1/hypermesh/site/devices/{device_id}` | `hm_site_…` | Live last-known Host `sell_state`. Not a receipt write. |
+| `#38` `site-machine-token-v0` · [`controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`api-keys-service`](https://github.com/hyperme-sh/api-keys-service) | `POST` / `GET` / `DELETE` | `/api/v1/hypermesh/site-tokens` · `GET …/site-tokens/me` | operator mint; site Bearer on `/me` | Mint / list / revoke / verify `hm_site_…` |
+| `#39` `fyber-auditor-v0` · `hyperme-sh/aiuditor` (private, not linked) | `POST` / `GET` | `/api/v1/auditor/v0/tickets` · `…/{id}` · `…/{id}/resolve` · `…/{id}/ack` | `hm_site_…` on create / site GET / ack; plane operator on resolve | Auditor inbox. Tickets = intent. |
+| `#40` `brewnix-executor-bridge-v0` · [`hypermesh-gateway`](https://github.com/hyperme-sh/hypermesh-gateway) · [`hypermesh-ticket`](https://github.com/hyperme-sh/hypermesh-ticket) | `POST` / `GET` | `/api/v1/hypermesh/site/jobs` · `…/{job_id}` | `hm_site_…` | Enqueue + poll `lease_stop` / `sell_pause`. Host applies. |
+| `#41` `heartbeat-sell-state-v0` · same public companions | `GET` | `/api/v1/hypermesh/site/devices/{device_id}` | `hm_site_…` | Live last-known Host `sell_state`. Not a receipt write. |
 
 Client notes: [`docs/plane-client.md`](plane-client.md).
 

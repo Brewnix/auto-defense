@@ -72,7 +72,7 @@ Live `alias_util` / real Eve (gateway role) is a documented follow-on: point `AI
 
 ## Plane staging E2E v0
 
-Site-token **safe** subset against a WireGuard-reachable Hypermesh plane ([`hyperme-sh/hypermesh-plane`](https://github.com/hyperme-sh/hypermesh-plane); owner map in [`docs/plane-client.md`](plane-client.md)). **Not Tailscale.** Do **not** put tokens in the repo. This cut does not claim the HTTP paths moved, or that AGX `plane_staging` was re-run against `hyperme-sh`.
+Site-token **safe** subset against a WireGuard-reachable Hypermesh plane (public companions [`hyperme-sh/hypermesh-gateway`](https://github.com/hyperme-sh/hypermesh-gateway) and [`hyperme-sh/hypermesh-ticket`](https://github.com/hyperme-sh/hypermesh-ticket); owner map in [`docs/plane-client.md`](plane-client.md)). **Not Tailscale.** Do **not** put tokens in the repo. This cut does not claim the HTTP paths moved, or that AGX `plane_staging` was re-run against `hyperme-sh`.
 
 ```bash
 export PANOPTICON_BASE_URL=https://panopticon.wg.example   # no trailing slash
