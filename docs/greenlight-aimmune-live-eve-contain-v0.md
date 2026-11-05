@@ -39,8 +39,12 @@
 
 Operator runs on a cottage with Suricata + OPNsense gateway role (cite Brewnix/proxmox-firewall; **not vendored here**).
 
+`/etc/aimmune/aimmune.env` is mode **0600**. systemd units load it (`EnvironmentFile=-/etc/aimmune/aimmune.env`). Interactive `aimmune` does not: `load_config()` in `src/aimmune/config.py` reads the process environment and CLI only. Without the export below, `cycle` has no Eve path or OPNsense credentials, and `status --json` reports `eve_path` null, even when the daemon is configured.
+
+Open a shell that can read that file (root, or the `aimmune` user — `deploy/install.sh` directs `chown aimmune:aimmune`). Export it the same way [`scripts/smoke-cottage-offline.sh`](../scripts/smoke-cottage-offline.sh) does, then run all three commands in that shell:
+
 ```bash
-# /etc/aimmune/aimmune.env 0600:
+# /etc/aimmune/aimmune.env 0600 holds the live contract (do not print secrets):
 # AIMMUNE_EVE_PATH=/var/log/suricata/eve.json
 # AIMMUNE_EXEC_MOCK=0   # or unset
 # AIMMUNE_OPNSENSE_URL=… AIMMUNE_OPNSENSE_KEY=… AIMMUNE_OPNSENSE_SECRET=…
@@ -49,7 +53,12 @@ Operator runs on a cottage with Suricata + OPNsense gateway role (cite Brewnix/p
 # SITE_ID=net-tn-cottage
 # AIMMUNE_STATE_DIR=/var/lib/aimmune
 
-aimmune cycle   # or wait for loop after a port_scan_burst Eve window
+set -a
+# shellcheck disable=SC1091
+source /etc/aimmune/aimmune.env
+set +a
+
+aimmune cycle   # or wait for the daemon loop after a port_scan_burst Eve window
 aimmune verify-chain
 aimmune status --json
 ```
@@ -92,7 +101,7 @@ Name only — `AIMMUNE_OPNSENSE_KEY` / `AIMMUNE_OPNSENSE_SECRET` (or `OPNSENSE_*
 ## Acceptance
 
 1. **Doc matches main** after branch from `4eb7524`.
-2. **Cottage evidence:** Product accepts operator paste of `cycle` / `verify-chain` / `status` summary (**no secrets**) into Sign-off notes.
+2. **Cottage evidence:** Product accepts operator paste of `cycle` / `verify-chain` / `status` summary (**no secrets**) into Sign-off notes. Those three commands count only after that shell exported `/etc/aimmune/aimmune.env`.
 3. **Greenlight** is Product's; **Sign-off** after Greenlight + Chris merge + clean cottage evidence.
 
 ## Sign-off
