@@ -106,7 +106,7 @@ Follow-on or other owners. **Not this Greenlight.**
 
 | HOLD | Why it is not this Greenlight |
 |------|-------------------------------|
-| Live Eve / real `alias_util` contain | Testing-harden follow-on citing the Brewnix gateway. v0 cottage smoke stays `AIMMUNE_EXEC_MOCK=1`. [`docs/testing-harden-v0.md`](testing-harden-v0.md) |
+| Live Eve / real `alias_util` contain | Deferred to Greenlight [`docs/greenlight-aimmune-live-eve-contain-v0.md`](greenlight-aimmune-live-eve-contain-v0.md). This cut stays the WG site-token safe subset. v0 cottage smoke stays `AIMMUNE_EXEC_MOCK=1`. [`docs/testing-harden-v0.md`](testing-harden-v0.md) |
 | `lease_stop` Greenlight / preempt against rented boxes | Forbidden on this cut. Safe subset only. |
 | Productization deploy / field install at scale | **Research lane.** Do not claim field deploy as this Greenlight. |
 | Hypermesh remint / lease / Stripe lease P0 | Other owners. Lease / rental is out of scope for AImmune Product on this repo. |
@@ -123,4 +123,4 @@ Product may Greenlight when **all** of the following are true:
 2. **WG-reachable evidence** — Product (or an operator they accept) runs `pytest -q -m plane_staging` from a WireGuard-reachable cottage or operator box and **pastes the output into Greenlight notes**. Skip / missing-secrets / `ubuntu-latest`-only dispatch is not that evidence.
 3. **Greenlight is Product’s.** Sign-off only after Greenlight **and** the Chris merge path. Do not treat this PR as Sign-off.
 
-After Greenlight + Sign-off, the live plane safe-subset definition above is the product lock for this cut. Later Greenlights (live Eve contain, `lease_stop`, Research deploy) are new documents — do not silently expand this one.
+After Greenlight + Sign-off, the live plane safe-subset definition above is the product lock for this cut. Live Eve / real `alias_util` contain is deferred to [`docs/greenlight-aimmune-live-eve-contain-v0.md`](greenlight-aimmune-live-eve-contain-v0.md). Later cuts (`lease_stop`, Research deploy) are new documents — do not silently expand this one.

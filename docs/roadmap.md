@@ -178,6 +178,10 @@ Product Greenlight of what is already testable on `main` (offline vertical SoT, 
 
 Separate Greenlight from the offline/MockEngine cottage cut. Live WireGuard site-token **safe** subset (`pytest -q -m plane_staging`) from a WG-reachable cottage or operator box. GitHub-hosted `ubuntu-latest` dispatch is **not** Greenlight evidence. Does not claim secrets exist, field deploy, or Hypermesh lease. [`docs/soft-soft-aimmune-plane-staging-v0.md`](soft-soft-aimmune-plane-staging-v0.md) (legacy path name). Sign-off follows Greenlight and the Chris merge path.
 
+## Greenlight live Eve / alias_util contain v0 (Product)
+
+Separate Greenlight from the offline/MockEngine cottage cut and from plane_staging. Live Suricata Eve + real OPNsense `alias_util` contain (`AIMMUNE_EXEC_MOCK` unset/0) from a cottage/gateway. Plane not required. Does not claim Suricata/OPNsense already wired on AGX, field deploy, or Hypermesh lease. [`docs/greenlight-aimmune-live-eve-contain-v0.md`](greenlight-aimmune-live-eve-contain-v0.md).
+
 ## Slice 5 exit (landed)
 
 - `aimmune.ui.status` — display enums; never blocked from resolve alone
