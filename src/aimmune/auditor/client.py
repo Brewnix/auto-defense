@@ -19,7 +19,7 @@ class AuditorError(RuntimeError):
 
 
 class AuditorClient:
-    """Site-token client for Panopticon #39 auditor tickets.
+    """Site-token client for auditor tickets (historical #39; live owner hyperme-sh/aiuditor).
 
     Does **not** implement resolve. Plane owns ``timed_out`` and human resolve.
     """

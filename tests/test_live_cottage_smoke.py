@@ -2,7 +2,7 @@
 
 Scripts the host-install checklist through offline contain.
 Skip unless ``AIMMUNE_LIVE_COTTAGE=1``. ``AIMMUNE_EXEC_MOCK=1``.
-No live alias_util / Eve / WireGuard / Panopticon / SIWE / Playwright.
+No live alias_util / Eve / WireGuard / Hypermesh plane / SIWE / Playwright.
 """
 
 from __future__ import annotations

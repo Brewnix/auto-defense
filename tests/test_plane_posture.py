@@ -1,4 +1,4 @@
-"""Mock Panopticon #41 sell_state + Brewnix staleness."""
+"""Mock historical #41 sell_state (hyperme-sh/hypermesh-plane) + Brewnix staleness."""
 
 from __future__ import annotations
 

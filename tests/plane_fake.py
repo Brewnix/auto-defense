@@ -1,4 +1,4 @@
-"""In-process Panopticon #40 / #41 stand-in for httpx.MockTransport tests."""
+"""In-process historical #40 / #41 stand-in (hyperme-sh/hypermesh-plane) for httpx.MockTransport tests."""
 
 from __future__ import annotations
 

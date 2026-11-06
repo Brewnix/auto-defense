@@ -1,4 +1,4 @@
-"""Mock Panopticon #40 site jobs — lease_id required, enqueue ≠ apply."""
+"""Mock historical #40 site jobs (hyperme-sh/hypermesh-plane) — lease_id required, enqueue ≠ apply."""
 
 from __future__ import annotations
 

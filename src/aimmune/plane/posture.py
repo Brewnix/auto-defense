@@ -1,4 +1,4 @@
-"""Panopticon #41 site device sell_state + Brewnix staleness."""
+"""Historical #41 site device sell_state (live owner hyperme-sh/hypermesh-plane) + Brewnix staleness."""
 
 from __future__ import annotations
 

@@ -138,7 +138,7 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 
 ## Synthetics v0 + host-install smoke (landed)
 
-- Offline vertical SoT: plane-down + `AIMMUNE_EXEC_MOCK=1` → Eve burst → rules contain (`port_scan`) **and** hold (`ssh_brute`) → verify-chain → local resolve → `grant mint-local` → `status --json`. No live Suricata / OPNsense / WG / Panopticon. Does not require SIWE crypto.
+- Offline vertical SoT: plane-down + `AIMMUNE_EXEC_MOCK=1` → Eve burst → rules contain (`port_scan`) **and** hold (`ssh_brute`) → verify-chain → local resolve → `grant mint-local` → `status --json`. No live Suricata / OPNsense / WG / Hypermesh plane. Does not require SIWE crypto.
 - Compose existing fixtures (`conftest`, `MockAlias`). Rules-only default. Plane-mocked marker is default-off (`FakeAuditor` / `FakeGrants` only)
 - Folded into existing `pytest` CI. Iface-pin unchanged. UI stays Vitest
 - Host-install smoke started **doc-only** (extends slice 9). USB roles are pointers + tarball notes, not qcow. Cottage offline script + `live_cottage` landed in testing harden v0
@@ -170,13 +170,13 @@ Slice 3 may start as soon as slice 1 writes receipts. Do not block 2 / 4 / 5 on 
 - Iface pin stays `3621849bbf7c368b1d709356c465883144300208`
 - Runbook: [`docs/packaging-v0.md`](packaging-v0.md)
 
-## Soft Soft testable cottage v0 (Product)
+## Greenlight testable cottage v0 (Product)
 
-Product Soft Soft of what is already testable on `main` (offline vertical SoT, MockEngine CI, cottage offline smoke, packaging matrix). Does not reopen slice / packaging / synthetics / testing-harden locks. Does not claim Research productization deploy or Hypermesh lease. [`docs/soft-soft-aimmune-testable-v0.md`](soft-soft-aimmune-testable-v0.md).
+Product Greenlight of what is already testable on `main` (offline vertical SoT, MockEngine CI, cottage offline smoke, packaging matrix). Does not reopen slice / packaging / synthetics / testing-harden locks. Does not claim Research productization deploy or Hypermesh lease. [`docs/soft-soft-aimmune-testable-v0.md`](soft-soft-aimmune-testable-v0.md) (legacy path name).
 
-## Soft Soft plane_staging v0 (Product)
+## Greenlight plane_staging v0 (Product)
 
-Separate Soft Soft from the offline/MockEngine cottage cut. Live WireGuard site-token **safe** subset (`pytest -q -m plane_staging`) from a WG-reachable cottage or operator box. GitHub-hosted `ubuntu-latest` dispatch is **not** Soft Soft evidence. Does not claim secrets exist, field deploy, or Hypermesh lease. [`docs/soft-soft-aimmune-plane-staging-v0.md`](soft-soft-aimmune-plane-staging-v0.md).
+Separate Greenlight from the offline/MockEngine cottage cut. Live WireGuard site-token **safe** subset (`pytest -q -m plane_staging`) from a WG-reachable cottage or operator box. GitHub-hosted `ubuntu-latest` dispatch is **not** Greenlight evidence. Does not claim secrets exist, field deploy, or Hypermesh lease. [`docs/soft-soft-aimmune-plane-staging-v0.md`](soft-soft-aimmune-plane-staging-v0.md) (legacy path name). Sign-off follows Greenlight and the Chris merge path.
 
 ## Slice 5 exit (landed)
 
@@ -189,4 +189,4 @@ Separate Soft Soft from the offline/MockEngine cottage cut. Live WireGuard site-
 
 ## Not this repo
 
-Panopticon SaaS gateway fork · Hypermesh-router IR chat UI · `schemas/` amends · market / renter surfaces · Tailscale-as-plane-transport.
+Hypermesh plane / gateway fork (`hyperme-sh/hypermesh-plane` private, not linked; [`hyperme-sh/hypermesh-gateway`](https://github.com/hyperme-sh/hypermesh-gateway); `FyberLabs/panopticon` archived) · Hypermesh-router IR chat UI · `schemas/` amends · market / renter surfaces · Tailscale-as-plane-transport.

@@ -2,7 +2,7 @@
 
 Compose existing fixtures only (conftest bursts, tmp_state MockAlias).
 Does not enable triage engines, FakeAuditor, or FakeGrants.
-No live Suricata / OPNsense / WireGuard / Panopticon / SIWE.
+No live Suricata / OPNsense / WireGuard / Hypermesh plane / SIWE.
 """
 
 from __future__ import annotations

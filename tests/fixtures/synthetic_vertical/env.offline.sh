@@ -1,6 +1,6 @@
 # Offline vertical synthetic — plane down, mock alias, rules-only.
 # Source from the repo root (or any cwd). Then set AIMMUNE_STATE_DIR + AIMMUNE_EVE_PATH.
-# No live Suricata, OPNsense, WireGuard, or Panopticon. No SIWE.
+# No live Suricata, OPNsense, WireGuard, or Hypermesh plane. No SIWE.
 
 export AIMMUNE_EXEC_MOCK=1
 export AIMMUNE_PLANE_REACHABLE=0

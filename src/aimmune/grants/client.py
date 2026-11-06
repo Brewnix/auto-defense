@@ -20,7 +20,7 @@ class GrantError(RuntimeError):
 
 
 class GrantClient:
-    """Site-token client for Panopticon #50 privilege grants.
+    """Site-token client for privilege grants (historical #50; live owner hyperme-sh/acl-service).
 
     Does **not** implement resolve or revoke. Plane owns minting.
     """

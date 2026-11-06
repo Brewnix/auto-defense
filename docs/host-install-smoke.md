@@ -28,7 +28,7 @@ Also locked: WireGuard not Tailscale; UI loopback (`AIMMUNE_UI_HOST=0.0.0.0` opt
 | Role | Owner | This repo ships |
 |------|-------|-----------------|
 | Gateway / Suricata Eve / `alias_util` | Brewnix OPNsense / [`proxmox-firewall`](https://github.com/Brewnix/proxmox-firewall) | `AIMMUNE_EVE_PATH` + `aimmune.exec.opnsense_alias` (or `AIMMUNE_EXEC_MOCK=1`) |
-| WireGuard overlay | Existing Panopticon / host path | [`docs/plane-client.md`](plane-client.md) cite only |
+| WireGuard overlay | Existing Hypermesh plane / host path | [`docs/plane-client.md`](plane-client.md) cite only |
 | Hypermesh Host / H4 `owner.sock` | [`hypermesh-host`](https://github.com/FyberLabs/hypermesh-host) | `AIMMUNE_HOST_STATE_DIR` cite — [`docs/slice-4-preempt.md`](slice-4-preempt.md) |
 | AImmune cottage | **This repo** | `pip install` · [`deploy/install.sh`](../deploy/install.sh) · `deploy/systemd/*.service` · [`deploy/aimmune.env.example`](../deploy/aimmune.env.example) · optional `ui/` |
 
@@ -142,8 +142,8 @@ MockCheck / `requireIrAct` are unchanged ([`docs/slice-8-sociacl-ir.md`](slice-8
 
 Do **not** set `AIMMUNE_PLANE_REACHABLE=1` until all three exist:
 
-1. WireGuard path to the Panopticon origin (`PANOPTICON_BASE_URL`) — **not Tailscale**
-2. `HM_SITE_TOKEN` (`hm_site_…`, **0600**) minted via operator `POST /api/v1/hypermesh/site-tokens` ([Panopticon #38](https://github.com/FyberLabs/panopticon/pull/38)); confirm `GET …/site-tokens/me`
+1. WireGuard path to the Hypermesh plane origin (`PANOPTICON_BASE_URL`) — **not Tailscale**
+2. `HM_SITE_TOKEN` (`hm_site_…`, **0600**) minted via operator `POST /api/v1/hypermesh/site-tokens` (historical `#38`; [`controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`api-keys-service`](https://github.com/hyperme-sh/api-keys-service)); confirm `GET …/site-tokens/me`
 3. Operator `Device.site_id` bind once — daemon does not auto-bind ([`docs/slice-0-inventory.md`](slice-0-inventory.md#device-bind-runbook-plane))
 
 `SITE_ID` / `AIMMUNE_SITE_ID` must equal the token site and every `Device.site_id` this daemon talks about. Then cycle-end auditor + grant poll may run. Host job RTT stays off the IDS loop (`aimmune preempt run` is on-demand).

@@ -1,11 +1,25 @@
-# Plane client — AImmune → Panopticon over WireGuard
+# Plane client — AImmune → Hypermesh plane over WireGuard
 
 **Product:** AImmune  
 **Repo:** `Brewnix/auto-defense`  
 **Status:** slice 7 — fyber.auditor `#39` + Hypermesh `#40` / `#41` + privilege grants `#50`. Resolve (tickets and grants) is plane-only.  
-**Transport:** **WireGuard** via the existing Panopticon / Hypermesh-host path. **Not Tailscale.**
+**Transport:** **WireGuard** via the existing Hypermesh plane / host path. **Not Tailscale.**
 
-AImmune is a **client** of the plane. This repo does not fork the gateway, mint tokens, or implement Host jobs. Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface); doors live in [`FyberLabs/panopticon`](https://github.com/FyberLabs/panopticon).
+AImmune is a **client** of the plane. This repo does not fork the gateway, mint tokens, or implement Host jobs. Contracts stay in [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface).
+
+**Plane owner citation (Chris lock 2026-11-05).** [`FyberLabs/panopticon`](https://github.com/FyberLabs/panopticon) is archived. Live owners are the `hyperme-sh` microservices (hyphen). Door numbers `#38` `#39` `#40` `#41` `#50` stay historical labels. This public repo links only public surfaces. Private owners are named in text and are not linked.
+
+| Door | Historical label | Public cite | Private owner (no link) |
+|------|------------------|-------------|-------------------------|
+| Site token `hm_site_` | `#38` | [`controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`api-keys-service`](https://github.com/hyperme-sh/api-keys-service) | doc name `site-machine-token-v0` |
+| fyber.auditor | `#39` | path `/api/v1/auditor/v0/tickets`; contract in [`Brewnix/inference-iface`](https://github.com/Brewnix/inference-iface) | `hyperme-sh/aiuditor`; doc name `fyber-auditor-v0` |
+| Site jobs | `#40` | [`hypermesh-gateway`](https://github.com/hyperme-sh/hypermesh-gateway), [`hypermesh-ticket`](https://github.com/hyperme-sh/hypermesh-ticket), public templates [`spanopticon`](https://github.com/hyperme-sh/spanopticon) | `hyperme-sh/hypermesh-plane`; doc name `brewnix-executor-bridge-v0` |
+| Live `sell_state` | `#41` | same public companions | `hyperme-sh/hypermesh-plane`; doc name `heartbeat-sell-state-v0` |
+| Privilege grants | `#50` | [`acl-service`](https://github.com/hyperme-sh/acl-service) (+ [`controlplane-tenancy`](https://github.com/hyperme-sh/controlplane-tenancy) for tenant membership) | doc name `privilege-grant-v0` |
+
+Product-lock SoT is `hyperme-sh/hypermesh-docs` (private; not linked). Primary plane owner is `hyperme-sh/hypermesh-plane` (private; not linked).
+
+These are owner citations. They do **not** claim the HTTP paths below already moved off `PANOPTICON_BASE_URL`, and they do **not** claim AGX `plane_staging` was re-run against `hyperme-sh`.
 
 ## Reach
 
@@ -33,9 +47,9 @@ Unknown / expired / revoked token → reject (no leak). Body `site_id`, when pre
 
 The daemon **does not** auto-bind boxes. Unbound or wrong-site devices 404 on site doors.
 
-1. Operator mints a site token for this `SITE_ID` ([Panopticon #38](https://github.com/FyberLabs/panopticon/pull/38)).
+1. Operator mints a site token for this `SITE_ID` (historical `#38`; [`controlplane-identity`](https://github.com/hyperme-sh/controlplane-identity) + [`api-keys-service`](https://github.com/hyperme-sh/api-keys-service); doc name `site-machine-token-v0`).
 2. Store plaintext as `HM_SITE_TOKEN` on the site (0600). Confirm `GET ${PANOPTICON_BASE_URL}/api/v1/hypermesh/site-tokens/me`.
-3. Operator `POST` / `PATCH` each Host device with `Device.site_id` = `SITE_ID` ([#40](https://github.com/FyberLabs/panopticon/pull/40)).
+3. Operator `POST` / `PATCH` each Host device with `Device.site_id` = `SITE_ID` (historical `#40`; public companions [`hypermesh-gateway`](https://github.com/hyperme-sh/hypermesh-gateway) and [`hypermesh-ticket`](https://github.com/hyperme-sh/hypermesh-ticket)).
 4. Enqueue / device GET require `device.site_id == token.site_id`. Cross-site ids → **404**.
 
 Runbook: [`docs/slice-0-inventory.md`](slice-0-inventory.md#device-bind-runbook-plane).
@@ -44,9 +58,9 @@ Runbook: [`docs/slice-0-inventory.md`](slice-0-inventory.md#device-bind-runbook-
 
 All paths are under `PANOPTICON_BASE_URL`. Auth is `HM_SITE_TOKEN` unless noted.
 
-### Auditor — [Panopticon #39](https://github.com/FyberLabs/panopticon/pull/39)
+### Auditor — historical `#39` (`hyperme-sh/aiuditor`, private, not linked)
 
-Contract: [fyber.auditor API v0](https://github.com/Brewnix/inference-iface/blob/main/docs/fyber-auditor-api-v0.md) · plane doc: [`fyber-auditor-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/fyber-auditor-v0.md)
+Contract: [fyber.auditor API v0](https://github.com/Brewnix/inference-iface/blob/main/docs/fyber-auditor-api-v0.md) · plane doc name `fyber-auditor-v0` (not linked).
 
 | Method | Path | Who | Role |
 |--------|------|-----|------|
@@ -59,9 +73,9 @@ Tickets are intent. Actuation SoT is the site receipt. UI must not claim blocked
 
 Site implementation: [`aimmune.auditor.client`](../src/aimmune/auditor/client.py) (`POST` create, `GET`, `POST` ack). Drain / poll: [`docs/slice-2-auditor.md`](slice-2-auditor.md). Default timeout **3s**. This repo does **not** implement resolve.
 
-### Site jobs — [Panopticon #40](https://github.com/FyberLabs/panopticon/pull/40)
+### Site jobs — historical `#40` (`hyperme-sh/hypermesh-plane`, private, not linked)
 
-Contract: [`brewnix-executor-bridge-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/brewnix-executor-bridge-v0.md)
+Public companions: [`hypermesh-gateway`](https://github.com/hyperme-sh/hypermesh-gateway), [`hypermesh-ticket`](https://github.com/hyperme-sh/hypermesh-ticket). Public templates: [`spanopticon`](https://github.com/hyperme-sh/spanopticon). Doc name `brewnix-executor-bridge-v0` (not linked).
 
 | Method | Path | Role |
 |--------|------|------|
@@ -80,9 +94,9 @@ Authorization: Bearer ${HM_SITE_TOKEN}
 {"kind": "lease_stop", "device_id": "<uuid>", "lease_id": "<uuid>"}
 ```
 
-### Site devices (live `sell_state`) — [Panopticon #41](https://github.com/FyberLabs/panopticon/pull/41)
+### Site devices (live `sell_state`) — historical `#41` (`hyperme-sh/hypermesh-plane`, private, not linked)
 
-Contract: [`heartbeat-sell-state-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/heartbeat-sell-state-v0.md)
+Same public companions as site jobs. Doc name `heartbeat-sell-state-v0` (not linked).
 
 | Method | Path | Role |
 |--------|------|------|
@@ -104,9 +118,9 @@ Site implementation: [`aimmune.plane.jobs`](../src/aimmune/plane/jobs.py) · [`a
 
 Stale heartbeat: if `last_heartbeat_at` is older than `AIMMUNE_SELL_STATE_STALE_S` (default 300s), treat posture as unknown. Automated stop-only holds.
 
-### Privilege grants — [Panopticon #50](https://github.com/FyberLabs/panopticon/pull/50)
+### Privilege grants — historical `#50` ([`hyperme-sh/acl-service`](https://github.com/hyperme-sh/acl-service))
 
-Contract: [privilege-grant-v0](https://github.com/Brewnix/inference-iface/blob/3621849bbf7c368b1d709356c465883144300208/docs/privilege-grant-v0.md) · plane doc: [`privilege-grant-v0`](https://github.com/FyberLabs/panopticon/blob/main/products/hypermesh/docs/privilege-grant-v0.md)
+Tenant membership: [`hyperme-sh/controlplane-tenancy`](https://github.com/hyperme-sh/controlplane-tenancy). Contract: [privilege-grant-v0](https://github.com/Brewnix/inference-iface/blob/3621849bbf7c368b1d709356c465883144300208/docs/privilege-grant-v0.md) · plane doc name `privilege-grant-v0` (not linked).
 
 Same env and timeout as auditor (`PANOPTICON_BASE_URL`, `HM_SITE_TOKEN`, `SITE_ID`, ~3s).
 

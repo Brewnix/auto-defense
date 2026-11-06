@@ -34,7 +34,7 @@ Default `addopts` is `-m "not live_cottage and not plane_staging and not plane_m
 
 ## Live cottage v0
 
-Automates [host-install-smoke](host-install-smoke.md) steps 2–6 (pip assumed; role prereqs cited, not installed). **Offline contain only.** `AIMMUNE_EXEC_MOCK=1`. No live Suricata, OPNsense `alias_util`, WireGuard, or Panopticon.
+Automates [host-install-smoke](host-install-smoke.md) steps 2–6 (pip assumed; role prereqs cited, not installed). **Offline contain only.** `AIMMUNE_EXEC_MOCK=1`. No live Suricata, OPNsense `alias_util`, WireGuard, or Hypermesh plane.
 
 ```bash
 # CI-less script (DEST_* prefix; no root, no systemd start by default)
@@ -72,7 +72,7 @@ Live `alias_util` / real Eve (gateway role) is a documented follow-on: point `AI
 
 ## Plane staging E2E v0
 
-Site-token **safe** subset against a WireGuard-reachable Panopticon. **Not Tailscale.** Do **not** put tokens in the repo.
+Site-token **safe** subset against a WireGuard-reachable Hypermesh plane (public companions [`hyperme-sh/hypermesh-gateway`](https://github.com/hyperme-sh/hypermesh-gateway) and [`hyperme-sh/hypermesh-ticket`](https://github.com/hyperme-sh/hypermesh-ticket); owner map in [`docs/plane-client.md`](plane-client.md)). **Not Tailscale.** Do **not** put tokens in the repo. This cut does not claim the HTTP paths moved, or that AGX `plane_staging` was re-run against `hyperme-sh`.
 
 ```bash
 export PANOPTICON_BASE_URL=https://panopticon.wg.example   # no trailing slash

@@ -6,7 +6,7 @@ Pointer only. This repo does **not** vendor OPNsense, Suricata, or a qcow. Thin 
 
 - Suricata `eve.json` (typically `/var/log/suricata/eve.json`)
 - `ai_autoblock` + `alias_util` add/delete
-- WireGuard overlay to Panopticon (**not Tailscale**)
+- WireGuard overlay to the Hypermesh plane (public companion [`hyperme-sh/hypermesh-gateway`](https://github.com/hyperme-sh/hypermesh-gateway); **not Tailscale**)
 
 ## Source
 
