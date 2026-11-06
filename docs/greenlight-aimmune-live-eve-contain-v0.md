@@ -39,12 +39,15 @@
 
 Operator runs on a cottage with Suricata + OPNsense gateway role (cite Brewnix/proxmox-firewall; **not vendored here**).
 
-`/etc/aimmune/aimmune.env` is mode **0600**. systemd units load it (`EnvironmentFile=-/etc/aimmune/aimmune.env`). Interactive `aimmune` does not: `load_config()` in `src/aimmune/config.py` reads the process environment and CLI only. Without the export below, `cycle` has no Eve path or OPNsense credentials, and `status --json` reports `eve_path` null, even when the daemon is configured.
+`/etc/aimmune/aimmune.env` is mode **0600** and owned by `aimmune`. [`deploy/install.sh`](../deploy/install.sh) and [`docs/slice-9-package.md`](slice-9-package.md) direct `chown aimmune:aimmune` and a login shell of `/usr/sbin/nologin`. systemd loads the file with `EnvironmentFile=` (not a shell) as `User=aimmune`. Interactive `aimmune` does not read the file: `load_config()` in `src/aimmune/config.py` reads the process environment and CLI only. Without the export below, `cycle` has no Eve path or OPNsense credentials, and `status --json` reports `eve_path` null.
 
-Open a shell that can read that file (root, or the `aimmune` user — `deploy/install.sh` directs `chown aimmune:aimmune`). Export it the same way [`scripts/smoke-cottage-offline.sh`](../scripts/smoke-cottage-offline.sh) does, then run all three commands in that shell:
+Do not `source` that file as root. `aimmune` can write it, and `source` executes it as shell, so a root shell would run that syntax as UID 0. Mode 0600 and `User=aimmune` do not prevent that. [`scripts/smoke-cottage-offline.sh`](../scripts/smoke-cottage-offline.sh) uses `set -a` / `source` / `set +a` only on a prefix file the script itself just wrote, as the user running the script. That is not this cottage file and is not Sign-off evidence.
+
+Run the export and the three commands only as user `aimmune`. `nologin` blocks a login shell; `sudo -u aimmune` runs one command as that user. State dir mode 0700 is owned by `aimmune`.
 
 ```bash
-# /etc/aimmune/aimmune.env 0600 holds the live contract (do not print secrets):
+# Do not print secrets. Do not source /etc/aimmune/aimmune.env as root.
+# Contract in the file (values stay on the box):
 # AIMMUNE_EVE_PATH=/var/log/suricata/eve.json
 # AIMMUNE_EXEC_MOCK=0   # or unset
 # AIMMUNE_OPNSENSE_URL=… AIMMUNE_OPNSENSE_KEY=… AIMMUNE_OPNSENSE_SECRET=…
@@ -53,15 +56,18 @@ Open a shell that can read that file (root, or the `aimmune` user — `deploy/in
 # SITE_ID=net-tn-cottage
 # AIMMUNE_STATE_DIR=/var/lib/aimmune
 
+sudo -u aimmune -- bash -c '
 set -a
 # shellcheck disable=SC1091
 source /etc/aimmune/aimmune.env
 set +a
-
-aimmune cycle   # or wait for the daemon loop after a port_scan_burst Eve window
+aimmune cycle
 aimmune verify-chain
 aimmune status --json
+'
 ```
+
+`aimmune cycle` may be omitted when the operator instead waits for `aimmune.service` after a `port_scan_burst` Eve window. `verify-chain` and `status --json` still run in this same `aimmune` process.
 
 ### Pass criteria
 
@@ -101,7 +107,7 @@ Name only — `AIMMUNE_OPNSENSE_KEY` / `AIMMUNE_OPNSENSE_SECRET` (or `OPNSENSE_*
 ## Acceptance
 
 1. **Doc matches main** after branch from `4eb7524`.
-2. **Cottage evidence:** Product accepts operator paste of `cycle` / `verify-chain` / `status` summary (**no secrets**) into Sign-off notes. Those three commands count only after that shell exported `/etc/aimmune/aimmune.env`.
+2. **Cottage evidence:** Product accepts operator paste of `cycle` / `verify-chain` / `status` summary (**no secrets**) into Sign-off notes. Those three commands count only after user `aimmune` exported `/etc/aimmune/aimmune.env` in that same process. A root `source` is not evidence.
 3. **Greenlight** is Product's; **Sign-off** after Greenlight + Chris merge + clean cottage evidence.
 
 ## Sign-off
